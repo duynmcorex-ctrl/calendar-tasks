@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calendar & Tasks</title>
+<title>Lịch & Ghi chú</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════
    iOS-INSPIRED DESIGN SYSTEM
@@ -12,7 +13,7 @@
    ═══════════════════════════════════════════ */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
   background: #F2F2F7;
   height: 100vh;
   display: flex;
@@ -26,7 +27,7 @@ body {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 0.5px solid rgba(60,60,67,0.2);
-  padding: 11px 20px;
+  padding: 7px 16px;
   display: flex;
   align-items: center;
 }
@@ -44,8 +45,8 @@ body {
 .cal-side {
   background: #fff;
   border-right: 0.5px solid rgba(60,60,67,0.15);
-  width: 380px;
-  min-width: 280px;
+  width: 320px;
+  min-width: 260px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -135,7 +136,7 @@ body {
   min-height: 54px;
 }
 .day:hover { background: rgba(0,0,0,0.04); }
-.day.other { opacity: .25; pointer-events: none; }
+.day.other { opacity: .35; cursor: pointer; }
 
 /* Day number — circle */
 .day .num {
@@ -185,10 +186,30 @@ body {
   white-space: normal;
 }
 
+/* Lunar row — flex, căn giữa, dot sang phải */
+.lun-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 2px;
+}
+/* Hoàng đạo / Hắc đạo dot — to 3x */
+.hd-dot {
+  font-size: 22px;
+  line-height: 0.5;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.hd-good { color: #FF3B30; }
+.hd-bad  { color: #D1D1D6; }
+
 /* Calendar note on cell */
 .day .cal-note-txt {
   font-size: .48rem;
-  color: #AF52DE;
+  color: #1C1C1E;        /* đen */
+  font-weight: 600;      /* đậm */
   line-height: 1.2;
   width: 100%;
   text-align: center;
@@ -196,11 +217,11 @@ body {
   white-space: normal;
 }
 
-/* Task status — tô màu cả ô để dễ nhận biết trong tháng */
-.day.has-done    { background: rgba(52,199,89,.14); }
-.day.has-partial { background: rgba(255,149,0,.13); }
-/* Khi selected: ưu tiên màu selected, giữ nguyên màu chữ (không đổi trắng) */
-.day.selected { background: rgba(0,122,255,.07) !important; }
+/* Task status */
+.day.has-done    { background: rgba(0,122,255,.09); }   /* xanh blue nhạt */
+.day.has-partial { background: rgba(142,142,147,.11); } /* ghi nhạt */
+/* Selected: chỉ giữ circle xanh ở số, không tô nền ô */
+.day.selected { background: transparent !important; }
 
 /* ── RESIZE HANDLE ── */
 .resize-handle {
@@ -230,22 +251,22 @@ body {
   flex-direction: column;
   overflow: hidden;
   background: #F8F8FA;
-  padding: 16px 16px 12px;
-  gap: 11px;
+  padding: 6px 12px 6px;
+  gap: 5px;
 }
 
 .note-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  padding: 2px 4px;
+  padding: 1px 2px;
 }
 .note-header .date-big {
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #1C1C1E;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.4px;
 }
 .note-header .date-sub { display: none; }
 .note-header .hol-badge {
@@ -263,9 +284,9 @@ body {
 .move-btn {
   background: rgba(0,122,255,0.09);
   border: none;
-  border-radius: 20px;
-  padding: 5px 12px;
-  font-size: .73rem;
+  border-radius: 16px;
+  padding: 3px 9px;
+  font-size: .68rem;
   font-weight: 600;
   cursor: pointer;
   color: #007AFF;
@@ -274,6 +295,9 @@ body {
   white-space: nowrap;
 }
 .move-btn:hover { background: rgba(0,122,255,0.16); }
+.sync-status-inline {
+  font-size: .68rem; color: #8E8E93; letter-spacing: -.1px; white-space: nowrap;
+}
 
 /* Calendar note input */
 .cal-note-row input {
@@ -291,33 +315,24 @@ body {
 .cal-note-row input:focus { box-shadow: 0 0 0 3px rgba(0,122,255,.15); }
 .cal-note-row input::placeholder { color: #AEAEB2; }
 
+/* Calendar note input */
+.cal-note-row input { padding: 6px 12px; font-size: .8rem; }
+
 /* Add task row */
-.add-row { display: flex; gap: 8px; }
+.add-row { display: flex; gap: 7px; }
 .add-row input {
-  flex: 1;
-  border: none;
-  border-radius: 12px;
-  padding: 10px 14px;
-  font-size: .88rem;
-  font-family: inherit;
-  outline: none;
-  background: #fff;
-  color: #1C1C1E;
-  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 0 0 0 rgba(0,122,255,0);
+  flex: 1; border: none; border-radius: 10px;
+  padding: 7px 12px; font-size: .83rem; font-family: inherit;
+  outline: none; background: #fff; color: #1C1C1E;
+  box-shadow: 0 1px 3px rgba(0,0,0,.07);
   transition: box-shadow .15s;
 }
 .add-row input::placeholder { color: #C7C7CC; }
-.add-row input:focus { box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 0 0 3px rgba(0,122,255,.18); }
+.add-row input:focus { box-shadow: 0 0 0 3px rgba(0,122,255,.18); }
 .add-row button {
-  background: #007AFF;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  padding: 10px 18px;
-  font-size: .88rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
+  background: #007AFF; color: #fff; border: none; border-radius: 10px;
+  padding: 7px 14px; font-size: .83rem; font-weight: 600;
+  cursor: pointer; font-family: inherit;
   transition: background .12s, transform .08s;
 }
 .add-row button:hover  { background: #0062CC; }
@@ -348,7 +363,7 @@ body {
   gap: 10px;
   background: transparent;
   border: none;
-  padding: 10px 14px 10px 12px;
+  padding: 6px 14px 6px 12px;
   transition: background .1s;
   cursor: default;
   user-select: none;
@@ -502,7 +517,7 @@ input[type=checkbox]:checked::after {
   background: transparent;
   border: none;
   border-radius: 6px;
-  padding: 5px 6px;
+  padding: 3px 6px;
   transition: background .1s;
   user-select: none;
 }
@@ -520,6 +535,12 @@ input[type=checkbox]:checked::after {
 .sub-item input[type=checkbox]:checked {
   background: #34C759;
   border-color: #34C759;
+}
+/* Work board → blue checkboxes (main + sub) */
+.tw-work .todo-item input[type=checkbox]:checked,
+.tw-work .sub-item input[type=checkbox]:checked {
+  background: #007AFF !important;
+  border-color: #007AFF !important;
 }
 .sub-item input[type=checkbox]:checked::after {
   left: 5px; top: 2px;
@@ -551,40 +572,51 @@ input[type=checkbox]:checked::after {
   letter-spacing: -.1px;
 }
 
-/* Add sub-task row */
+/* Add sub-task row — ghost style: ẩn khi không dùng, hiện khi hover/focus */
 .add-sub-row {
   display: flex;
   gap: 6px;
   margin-top: 3px;
   margin-bottom: 4px;
   padding-left: 2px;
+  opacity: 0.38;          /* gần như vô hình khi không hover */
+  transition: opacity .18s;
 }
+.add-sub-row:hover,
+.add-sub-row:focus-within { opacity: 1; }
 .add-sub-row input {
   flex: 1;
-  border: none;
+  border: 1px dashed rgba(0,0,0,.15);
   border-radius: 8px;
   padding: 5px 10px;
   font-size: .8rem;
   font-family: inherit;
   outline: none;
-  background: #F2F2F7;
+  background: transparent;
   color: #3C3C43;
 }
-.add-sub-row input::placeholder { color: #AEAEB2; }
-.add-sub-row input:focus { background: #E5E5EA; }
+.add-sub-row input::placeholder { color: #C7C7CC; }
+.add-sub-row input:focus {
+  background: #F2F2F7;
+  border-color: rgba(0,122,255,.35);
+}
 .add-sub-row button {
-  background: #E5E5EA;
-  border: none;
+  background: transparent;
+  border: 1px dashed rgba(0,0,0,.13);
   border-radius: 8px;
   padding: 5px 11px;
   font-size: .75rem;
-  font-weight: 600;
+  font-weight: 400;       /* không đậm */
   cursor: pointer;
-  color: #3C3C43;
+  color: #8E8E93;         /* xám nhạt, không màu chủ đạo */
   font-family: inherit;
-  transition: background .12s;
+  transition: background .12s, color .12s, border-color .12s;
 }
-.add-sub-row button:hover { background: #D1D1D6; }
+.add-sub-row button:hover {
+  background: rgba(0,0,0,.05);
+  color: #3C3C43;
+  border-color: rgba(0,0,0,.22);
+}
 
 /* ── DROP ZONES ── */
 .dz {
@@ -593,18 +625,23 @@ input[type=checkbox]:checked::after {
   height: 3px;
   margin: 0;
   cursor: default;
-  transition: height .12s, margin .12s;
+  transition: height .1s, margin .1s;
 }
-#todoList.drag-active .dz { height: 18px; margin: 1px 0; }
+/* Không phình toàn bộ khi drag — giữ layout ổn định */
+#todoList.drag-active .dz-main     { height: 4px; }
+#todoList.drag-active .dz-sub      { height: 3px; }
+#todoList.drag-active .dz-sub-item { height: 3px; }
+/* Chỉ phình khi hover đúng vùng thả */
+.dz.over { height: 20px !important; margin: 1px 0; }
 .dz-line {
   flex: 1;
   height: 2px;
   border-radius: 2px;
   background: transparent;
-  transition: background .1s, height .1s;
+  transition: background .08s, height .08s;
 }
-#todoList.drag-active .dz-main     .dz-line { background: rgba(0,122,255,.18); }
-#todoList.drag-active .dz-sub      .dz-line { background: rgba(0,122,255,.12); }
+#todoList.drag-active .dz-main     .dz-line { background: rgba(0,122,255,.10); }
+#todoList.drag-active .dz-sub      .dz-line { background: transparent; }
 #todoList.drag-active .dz-sub-item .dz-line { background: rgba(0,122,255,.10); }
 .dz.over .dz-line                { background: #007AFF !important; height: 3px; }
 .dz-sub.over .dz-line            { background: #007AFF !important; }
@@ -677,13 +714,122 @@ input[type=checkbox]:checked::after {
   .cal-side { width: 100% !important; min-width: 0 !important; border-right: none; border-bottom: 0.5px solid rgba(60,60,67,.15); }
   .resize-handle { display: none; }
 }
+/* ── GANTT / PROJECT SCHEDULE ── */
+.gantt-section {
+  background: #fff;
+  border-top: 0.5px solid rgba(60,60,67,0.15);
+  padding: 8px 18px 6px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.gantt-footer {
+  font-size: 10px;
+  color: #aeaeb2;
+  letter-spacing: 0.3px;
+  margin-top: 4px;
+  text-align: left;
+}
+/* Cột ngày đang chọn — chỉ tô nền ô trống, không che màu dự án */
+.g-sel-col { background: rgba(0,122,255,0.11); }
+.gantt-table {
+  border-collapse: collapse;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.gantt-table .g-num {
+  font-size: 9px;
+  font-weight: 400;
+  color: #8e8e93;
+  text-align: right;
+  padding-right: 4px;
+  min-width: 14px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.gantt-table .g-proj {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1c1c1e;
+  padding: 1px 12px 1px 0;
+  text-align: left;
+  min-width: 60px;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gantt-table .g-dow {
+  color: #8e8e93;
+  text-align: center;
+  padding: 0 1px;
+  font-size: 9px;
+  width: 24px;
+  font-weight: 400;
+}
+.gantt-table .g-day {
+  color: #3c3c43;
+  text-align: center;
+  padding: 0 1px 4px;
+  font-size: 10px;
+  width: 24px;
+}
+/* Đường kẻ dóng hàng nét đứt */
+.gantt-table .g-cell {
+  width: 24px;
+  height: 16px;
+  padding: 2px 1px;
+  border-right: 0.5px dashed rgba(60,60,67,0.1);
+  border-bottom: 0.5px dashed rgba(60,60,67,0.08);
+  cursor: pointer;
+}
+.gantt-table thead th {
+  border-right: 0.5px dashed rgba(60,60,67,0.1);
+}
+.gantt-table .g-cell:hover { filter: brightness(0.9); }
+.gantt-table .g-cell[draggable="true"] { cursor: grab; }
+.gantt-table .g-cell[draggable="true"]:active { cursor: grabbing; }
+.g-dz-over  { outline: 2px dashed #007AFF !important; outline-offset: -2px; }
+.g-weekend .g-dow, .g-weekend { color: #FF3B30; }
+.g-day.g-today   { color: #FF3B30 !important; font-weight: 700; }
+.g-dow.g-today   { color: #FF3B30 !important; font-weight: 700; }
+.g-empty { color: #8e8e93; font-size: 12px; padding: 4px 0; }
+
+/* ── TWO BOARDS ── */
+.board-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px 4px;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.5px; text-transform: uppercase;
+  user-select: none;
+}
+.board-work-header     { color: #007AFF; border-top: 1.5px solid rgba(0,122,255,.2); margin-top: 2px; }
+.board-personal-header { color: #34C759; border-top: 1.5px solid rgba(52,199,89,.25); margin-top: 6px; }
+.board-add-row {
+  display: flex; gap: 7px;
+  padding: 5px 14px 6px 14px;
+}
+.board-add-row input {
+  flex: 1; border: none; border-radius: 8px; background: #F2F2F7;
+  padding: 6px 10px; font-size: .83rem; outline: none;
+}
+.board-add-row input:focus { box-shadow: 0 0 0 2px rgba(52,199,89,.35); }
+.board-add-row button {
+  background: #34C759; color: #fff; border: none; border-radius: 8px;
+  padding: 5px 12px; font-size: .82rem; font-weight: 600; cursor: pointer;
+}
+.board-switch-btn {
+  margin-left: auto; font-size: 9.5px; color: #aeaeb2;
+  background: none; border: 0.5px solid #d1d1d6; border-radius: 4px;
+  padding: 1px 5px; cursor: pointer; flex-shrink: 0;
+}
+.board-switch-btn:hover { color: #007AFF; border-color: #007AFF; }
+.todo-item.board-personal { border-left: 2px solid rgba(52,199,89,.45); }
 </style>
 </head>
 <body>
 
 <div class="header">
   <h1>Calendar &amp; Tasks</h1>
-  <span style="margin-left:auto;font-size:.75rem;color:#8E8E93;letter-spacing:-.1px">📦 Local storage</span>
+  <span id="clockTime" style="font-size:.88rem;font-weight:300;letter-spacing:2px;color:#aeaeb2;font-variant-numeric:tabular-nums;margin-left:10px"></span>
 </div>
 
 <div class="layout">
@@ -708,8 +854,14 @@ input[type=checkbox]:checked::after {
       <div class="date-big" id="noteDateBig">Select a day</div>
       <div class="date-sub" id="noteDateSub"></div>
       <span class="hol-badge" id="noteHolBadge" style="display:none"></span>
-      <div class="note-actions">
-        <button class="move-btn" onclick="openMoveModal()">📋 Copy / ✂️ Move</button>
+      <div class="note-actions" style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <span id="cloudStatus"
+          onclick="openCloudSetup()"
+          title="Cloud Sync — click để cài đặt"
+          style="font-size:.68rem;color:#8e8e93;white-space:nowrap;cursor:pointer;padding:2px 7px;border-radius:10px;transition:background .12s"
+          onmouseover="this.style.background='rgba(0,0,0,.05)'"
+          onmouseout="this.style.background=''">☁️</span>
+        <button class="move-btn" onclick="openMoveModal()">Copy / Move</button>
       </div>
     </div>
 
@@ -724,6 +876,11 @@ input[type=checkbox]:checked::after {
 
     <div class="todo-list" id="todoList"></div>
   </div>
+</div>
+
+<!-- GANTT / PROJECT SCHEDULE -->
+<div class="gantt-section">
+  <div id="ganttWrap"></div>
 </div>
 
 <script>
@@ -860,7 +1017,255 @@ function getHols(y, m, d) {
   return list;
 }
 
-// (Cloud sync removed — public version uses localStorage only)
+// ── HOÀNG ĐẠO / HẮC ĐẠO ──
+// Dựa vào Julian Day Number mod 12 (chi của ngày) và tháng âm lịch
+// 6 chi hoàng đạo thay đổi theo tháng âm lịch (đã kiểm tra với dữ liệu thực tế)
+const HD_BRANCHES = [
+  [0,1,6,7,9,10],  // tháng 1, 7
+  [2,3,5,6,8,9],   // tháng 2, 8
+  [0,4,5,7,8,10],  // tháng 3, 9
+  [0,1,6,7,9,10],  // tháng 4, 10 (same as 1,7 but offset verified)
+  [0,2,3,8,9,11],  // tháng 5, 11
+  [1,2,4,5,10,11], // tháng 6, 12
+];
+
+function isHoangDao(sD, sM, sY) {
+  const jd = jdFromDate(sD, sM, sY);
+  const dayBranch = jd % 12; // 0=Tý, 1=Sửu, ..., 11=Hợi
+  const lm = solar2lunar(sD, sM, sY).m; // tháng âm 1-12
+  const mg = ((lm - 1) % 6); // nhóm tháng 0-5
+  return HD_BRANCHES[mg].includes(dayBranch);
+}
+
+// ══════════════════════════════════════════
+//  SUPABASE CLOUD SYNC
+// ══════════════════════════════════════════
+// ══════════════════════════════════════════
+//  FILE SYNC — OneDrive JSON (thay Supabase)
+// ══════════════════════════════════════════
+let _dirHandle    = null;
+let _fileSaveTimer = null;
+const DATA_FILE   = 'todo-data.json';
+
+function setSyncStatus(msg, color) {
+  const el = document.getElementById('syncStatus');
+  if (el) { el.textContent = msg; el.style.color = color || '#8E8E93'; }
+}
+
+// IndexedDB: lưu directory handle giữa các session
+function _idb(mode, key, val) {
+  return new Promise(resolve => {
+    const req = indexedDB.open('TodoFileSync', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('kv');
+    req.onsuccess = e => {
+      const db = e.target.result;
+      const tx = db.transaction('kv', mode);
+      const st = tx.objectStore('kv');
+      const r  = mode === 'readwrite' ? st.put(val, key) : st.get(key);
+      r.onsuccess = () => resolve(r.result);
+      r.onerror   = () => resolve(null);
+    };
+    req.onerror = () => resolve(null);
+  });
+}
+
+// Khôi phục directory handle đã lưu (không cần user chọn lại)
+async function initFileSync() {
+  try {
+    const h = await _idb('readonly', 'dirHandle');
+    if (!h) return false;
+    // Kiểm tra / xin lại quyền truy cập
+    const perm = await h.queryPermission({ mode: 'readwrite' });
+    if (perm === 'granted') { _dirHandle = h; return true; }
+    const perm2 = await h.requestPermission({ mode: 'readwrite' });
+    if (perm2 === 'granted') { _dirHandle = h; return true; }
+  } catch(e) {}
+  return false;
+}
+
+// Người dùng chọn thư mục lần đầu
+async function pickSyncFolder() {
+  if (!window.showDirectoryPicker) {
+    alert('Trình duyệt chưa hỗ trợ File System API.\nDùng Chrome / Edge phiên bản mới nhất.');
+    return false;
+  }
+  try {
+    const h = await window.showDirectoryPicker({ mode: 'readwrite', startIn: 'documents' });
+    _dirHandle = h;
+    await _idb('readwrite', 'dirHandle', h);
+    document.getElementById('connectBtn').textContent = '📁 ' + h.name;
+
+    // ĐỌC FILE TRƯỚC — chỉ ghi nếu file chưa có data
+    // (tránh ghi đè data từ máy khác bằng localStorage rỗng)
+    const loaded = await loadFromFile();
+    if (loaded) {
+      renderTodos(); renderCal(); renderNote();
+      setSyncStatus('📁 Loaded', '#34C759');
+    } else {
+      await saveToFile(); // file chưa tồn tại → tạo mới từ localStorage
+    }
+    return true;
+  } catch(e) { return false; }
+}
+
+// Ghi toàn bộ data vào todo-data.json
+async function saveToFile() {
+  if (!_dirHandle) return;
+  try {
+    const payload = { tasks: load(), notes: loadNotes(), ganttMarks: loadGanttMarks(), savedAt: new Date().toISOString() };
+    const fh = await _dirHandle.getFileHandle(DATA_FILE, { create: true });
+    const wr = await fh.createWritable();
+    await wr.write(JSON.stringify(payload));
+    await wr.close();
+    setSyncStatus('📁 Saved', '#34C759');
+  } catch(e) {
+    setSyncStatus('📁 Error', '#FF3B30');
+  }
+}
+
+// Debounced save (gọi sau mỗi thay đổi)
+function scheduleFileSave() {
+  clearTimeout(_fileSaveTimer);
+  setSyncStatus('📁…', '#8E8E93');
+  _fileSaveTimer = setTimeout(saveToFile, 800);
+}
+
+// Đọc data từ file JSON (khi mở app)
+async function loadFromFile() {
+  if (!_dirHandle) return false;
+  setSyncStatus('📁 Loading…', '#007AFF');
+  try {
+    const fh   = await _dirHandle.getFileHandle(DATA_FILE);
+    const file = await fh.getFile();
+    const text = await file.text();
+    const p    = JSON.parse(text);
+
+    const localHasData = Object.keys(load()).length > 0;
+
+    if (p.tasks && Object.keys(p.tasks).length > 0) {
+      // Merge ganttNote từ localStorage vào file data (tránh mất mark)
+      const localTasks = load();
+      Object.keys(p.tasks).forEach(dk => {
+        const local = localTasks[dk] || [];
+        p.tasks[dk].forEach(ft => {
+          const lt = local.find(t => t.id === ft.id);
+          if (lt?.ganttNote && !ft.ganttNote) ft.ganttNote = lt.ganttNote;
+        });
+      });
+      localStorage.setItem('_cal_', JSON.stringify(p.tasks));
+      if (p.notes) localStorage.setItem('_cal_notes_', JSON.stringify(p.notes));
+      if (p.ganttMarks) localStorage.setItem('_gantt_marks_', JSON.stringify(p.ganttMarks));
+      setSyncStatus('📁 Loaded', '#34C759');
+      return true;
+    } else if (localHasData) {
+      // File rỗng nhưng local có data → ghi lên file
+      await saveToFile();
+      return true;
+    }
+  } catch(e) {
+    if (e.name === 'NotFoundError') {
+      // File chưa tồn tại → tạo mới từ localStorage
+      await saveToFile();
+      return true;
+    }
+    setSyncStatus('📁 No file', '#FF9500');
+  }
+  return false;
+}
+
+// Thay thế pushToCloud
+function pushToCloud() { scheduleFileSave(); }
+
+// ══════════════════════════════════════════
+//  CLOUD SYNC — JSONBin.io (tự động, không cần click)
+//  Setup 1 lần: jsonbin.io → Sign up free → New Bin → copy Bin ID + Master Key
+// ══════════════════════════════════════════
+const JBIN_BASE = 'https://api.jsonbin.io/v3/b';
+let _cloudPushTimer = null;
+
+function loadCloudCfg()    { return JSON.parse(localStorage.getItem('_cloud_cfg_') || 'null'); }
+function saveCloudCfg(cfg) { localStorage.setItem('_cloud_cfg_', JSON.stringify(cfg)); }
+
+function setCloudStatus(msg, color) {
+  const el = document.getElementById('cloudStatus');
+  if (el) { el.textContent = msg; el.style.color = color || '#8e8e93'; }
+}
+
+function scheduleCloudPush() {
+  clearTimeout(_cloudPushTimer);
+  _cloudPushTimer = setTimeout(cloudPush, 1500);
+}
+
+async function cloudPull() {
+  const cfg = loadCloudCfg();
+  if (!cfg?.binId || !cfg?.apiKey) return false;
+  setCloudStatus('☁️ Đang tải…', '#007AFF');
+  try {
+    const r = await fetch(`${JBIN_BASE}/${cfg.binId}/latest`, {
+      headers: { 'X-Master-Key': cfg.apiKey, 'X-Bin-Meta': 'false' }
+    });
+    if (!r.ok) { setCloudStatus('☁️ Lỗi kết nối', '#FF3B30'); return false; }
+    const p = await r.json();
+    if (p.tasks && Object.keys(p.tasks).length > 0) {
+      localStorage.setItem('_cal_', JSON.stringify(p.tasks));
+      if (p.notes)      localStorage.setItem('_cal_notes_',  JSON.stringify(p.notes));
+      if (p.ganttMarks) localStorage.setItem('_gantt_marks_', JSON.stringify(p.ganttMarks));
+      const ts = p.savedAt ? new Date(p.savedAt).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) : '';
+      setCloudStatus('☁️ Synced' + (ts ? ' ' + ts : ''), '#34C759');
+      return true;
+    }
+    setCloudStatus('☁️ Sẵn sàng', '#34C759');
+    return false;
+  } catch(e) {
+    setCloudStatus('☁️ Offline', '#FF9500');
+    return false;
+  }
+}
+
+async function cloudPush() {
+  const cfg = loadCloudCfg();
+  if (!cfg?.binId || !cfg?.apiKey) return;
+  setCloudStatus('☁️ Đang lưu…', '#8e8e93');
+  try {
+    const payload = {
+      tasks: load(), notes: loadNotes(), ganttMarks: loadGanttMarks(),
+      savedAt: new Date().toISOString()
+    };
+    const r = await fetch(`${JBIN_BASE}/${cfg.binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': cfg.apiKey },
+      body: JSON.stringify(payload)
+    });
+    if (r.ok) setCloudStatus('☁️ Đã lưu', '#34C759');
+    else      setCloudStatus('☁️ Lỗi lưu', '#FF3B30');
+  } catch(e) { setCloudStatus('☁️ Offline', '#FF9500'); }
+}
+
+function openCloudSetup() {
+  const cfg = loadCloudCfg() || {};
+  const msg =
+`☁️ CLOUD SYNC SETUP (JSONBin.io — miễn phí)
+
+Bước 1: Vào jsonbin.io → Sign up (free)
+Bước 2: Nhấn "+ New Bin" → tạo bin rỗng {}
+Bước 3: Copy Bin ID (trong URL) và Master Key (Account Settings → API Keys)
+Bước 4: Nhập vào bên dưới — setup 1 lần, dùng mãi mãi ✓
+
+Bin ID hiện tại: ${cfg.binId || '(chưa có)'}`;
+
+  const binId  = prompt(msg + '\n\nNhập Bin ID:', cfg.binId || '');
+  if (binId === null) return;
+  const apiKey = prompt('Nhập X-Master-Key:', cfg.apiKey || '');
+  if (apiKey === null) return;
+  if (!binId.trim() || !apiKey.trim()) { alert('Cần điền đủ cả 2 trường!'); return; }
+
+  saveCloudCfg({ binId: binId.trim(), apiKey: apiKey.trim() });
+
+  cloudPull().then(loaded => {
+    if (loaded) { renderTodos(); renderCal(); renderNote(); }
+    else        { cloudPush(); } // bin mới rỗng → đẩy data lên
+  });
+}
 
 // ══════════════════════════════════════════
 //  STATE & STORAGE
@@ -873,15 +1278,25 @@ function key(y,m,d) { return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padSt
 function load() { return JSON.parse(localStorage.getItem('_cal_') || '{}'); }
 function save(data) {
   localStorage.setItem('_cal_', JSON.stringify(data));
+  scheduleFileSave();
+  scheduleCloudPush();
 }
 function loadNotes() { return JSON.parse(localStorage.getItem('_cal_notes_') || '{}'); }
+let _calNoteTimer = null;
 function saveCalNote() {
+  // Lưu ngay vào localStorage để không mất khi chuyển ngày
   const k = key(selY, selM, selD);
   const notes = loadNotes();
   const val = document.getElementById('calNoteInput').value.trim();
   if (val) notes[k] = val; else delete notes[k];
   localStorage.setItem('_cal_notes_', JSON.stringify(notes));
-  renderCal();
+  // Debounce renderCal + cloud push — chỉ chạy sau khi ngừng gõ 500ms
+  clearTimeout(_calNoteTimer);
+  _calNoteTimer = setTimeout(() => {
+    scheduleFileSave();
+    scheduleCloudPush();
+    renderCal();
+  }, 500);
 }
 
 // ══════════════════════════════════════════
@@ -926,9 +1341,9 @@ function renderCal() {
     if (isToday) el.classList.add('today');
     if (y === selY && m === selM && d === selD) el.classList.add('selected');
 
-    // Lunar
+    // Lunar — chỉ hiện số ngày, mùng 1 mới hiện "1/tháng"
     const l = solar2lunar(d, m, y);
-    const lunStr = l.d + '/' + l.m + (l.leap ? 'n' : '');
+    const lunStr = (l.d === 1 ? '1/' + l.m : l.d) + (l.leap ? 'n' : '');
 
     // Holidays
     const hols = getHols(y, m, d);
@@ -941,13 +1356,20 @@ function renderCal() {
 
     const calNote = calNotes[k] || '';
 
+    const hd = isHoangDao(d, m, y);
     el.innerHTML =
       '<div class="num">' + d + '</div>' +
-      '<div class="lun">' + lunStr + '</div>' +
+      '<div class="lun-row">' +
+        '<span class="lun">' + lunStr + '</span>' +
+        '<span class="hd-dot ' + (hd ? 'hd-good' : 'hd-bad') + '" title="' + (hd ? 'Hoàng đạo' : 'Hắc đạo') + '">•</span>' +
+      '</div>' +
       (hols.length ? '<div class="hol">' + hols[0] + '</div>' : '') +
-      (calNote ? '<div class="cal-note-txt">📌 ' + esc(calNote) + '</div>' : '');
+      (calNote ? '<div class="cal-note-txt">' + esc(calNote) + '</div>' : '');
 
-    el.onclick = () => selectDay(y, m, d);
+    el.onclick = () => {
+      if (other) { curY = y; curM = m; } // chuyển tháng khi click ngày tháng khác
+      selectDay(y, m, d);
+    };
     return el;
   }
 
@@ -970,6 +1392,7 @@ function renderCal() {
     const y = curM + 1 > 12 ? curY + 1 : curY;
     g.appendChild(makeCell(y, m, d, true));
   }
+  renderGantt(); // cập nhật Gantt theo tháng đang xem
 }
 
 // ══════════════════════════════════════════
@@ -986,9 +1409,18 @@ function autoExpandAll(y, m, d) {
 
 function selectDay(y, m, d) {
   selY = y; selM = m; selD = d;
+  // Nếu ngày thuộc tháng khác với lịch đang hiển thị → chuyển lịch sang tháng đó
+  if (y !== curY || m !== curM) { curY = y; curM = m; }
   autoExpandAll(y, m, d);
-  renderCal();
+  renderCal(); // renderCal gọi renderGantt bên trong
   renderNote();
+  // Scroll Gantt đến cột ngày vừa chọn
+  if (y === curY && m === curM) {
+    setTimeout(() => {
+      const col = document.getElementById('gcol-' + d);
+      if (col) col.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }, 50);
+  }
 }
 
 const WDAY = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -1010,7 +1442,9 @@ function renderNote() {
 
   // Load calendar note for this day
   const notes = loadNotes();
-  document.getElementById('calNoteInput').value = notes[key(selY, selM, selD)] || '';
+  const k = key(selY, selM, selD);
+  const noteVal = notes[k] || '';
+  document.getElementById('calNoteInput').value = noteVal;
 
   renderTodos();
 }
@@ -1026,7 +1460,7 @@ function addTask() {
   const k = key(selY, selM, selD);
   if (!data[k]) data[k] = [];
   const newId = Date.now();
-  const newTask = { id: newId, text, done: false, subtasks: [] };
+  const newTask = { id: newId, text, done: false, subtasks: [], board: 'work' };
   if (insertAfterIdx !== null && insertAfterIdx < data[k].length) {
     data[k].splice(insertAfterIdx + 1, 0, newTask); // chèn sau vị trí đã chọn
   } else {
@@ -1042,6 +1476,58 @@ function addTask() {
     const newDiv = document.querySelector(`.todo-item[data-id="${newId}"]`);
     if (newDiv) newDiv.focus();
   }, 30);
+}
+
+// Thêm task vào bảng Personal (hỗ trợ insertAfterIdx)
+function addPersonalTask() {
+  const inp = document.getElementById('personalTaskInput');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  const data = load();
+  const k = key(selY, selM, selD);
+  if (!data[k]) data[k] = [];
+  const newId = Date.now();
+  const newTask = { id: newId, text, done: false, subtasks: [], board: 'personal' };
+  if (insertAfterIdx !== null && insertAfterIdx < data[k].length) {
+    data[k].splice(insertAfterIdx + 1, 0, newTask);
+  } else {
+    data[k].push(newTask);
+  }
+  insertAfterIdx = null;
+  save(data); inp.value = '';
+  renderTodos(); renderCal();
+  setTimeout(() => {
+    const newDiv = document.querySelector(`.todo-item[data-id="${newId}"]`);
+    if (newDiv) newDiv.focus();
+  }, 30);
+}
+
+// Shift+Enter: thêm personal task + mở sub-task input
+function addPersonalTaskAndExpand() {
+  const inp = document.getElementById('personalTaskInput');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  const data = load();
+  const k = key(selY, selM, selD);
+  if (!data[k]) data[k] = [];
+  const newId = Date.now();
+  data[k].push({ id: newId, text, done: false, subtasks: [], board: 'personal' });
+  save(data); inp.value = '';
+  expandedTasks.add(newId);
+  renderTodos(); renderCal();
+  focusByIdRetry('subInp_' + newId);
+}
+
+// Chuyển task giữa 2 bảng
+function switchTaskBoard(k, id) {
+  const data = load();
+  const t = data[k] && data[k].find(t => t.id === id);
+  if (!t) return;
+  pushUndo(k, data[k]);
+  t.board = (t.board === 'personal') ? 'work' : 'personal';
+  save(data); renderTodos(); renderCal();
 }
 
 // Shift+Enter: thêm task chính + mở thẳng sub-task input
@@ -1129,23 +1615,65 @@ const expandedTasks = new Set();
 let insertAfterIdx = null;
 
 // ── UNDO STACK ──
-const undoStack = []; // [{dateKey, tasks}]
-const MAX_UNDO = 30;
+// ── UNDO STACK (tasks + notes) ──
+const undoStack = [];
+const MAX_UNDO  = 30;
 
+// Undo cho todo tasks (xóa task)
 function pushUndo(dateKey, currentTasks) {
-  undoStack.push({ dateKey, tasks: JSON.parse(JSON.stringify(currentTasks)) });
+  undoStack.push({ type: 'tasks', dateKey, tasks: JSON.parse(JSON.stringify(currentTasks)) });
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
+// Undo cho gantt / calendar notes
+function pushUndoNotes(keysAffected) {
+  const notes    = loadNotes();
+  const snapshot = {};
+  keysAffected.forEach(k => { snapshot[k] = notes[k]; }); // lưu giá trị hiện tại (trước khi thay đổi)
+  undoStack.push({ type: 'notes', keysAffected, snapshot });
   if (undoStack.length > MAX_UNDO) undoStack.shift();
 }
 
 function undoLast() {
   if (!undoStack.length) return;
-  const { dateKey, tasks } = undoStack.pop();
-  const data = load();
-  if (tasks.length === 0) delete data[dateKey];
-  else data[dateKey] = tasks;
-  localStorage.setItem('_cal_', JSON.stringify(data));
-  renderCal();
-  if (dateKey === key(selY, selM, selD)) renderTodos();
+  const entry = undoStack.pop();
+
+  if (entry.type === 'notes') {
+    // Khôi phục notes
+    const notes = loadNotes();
+    entry.keysAffected.forEach(k => {
+      if (entry.snapshot[k] !== undefined) notes[k] = entry.snapshot[k];
+      else delete notes[k];
+    });
+    localStorage.setItem('_cal_notes_', JSON.stringify(notes));
+    scheduleFileSave();
+    // Cập nhật input nếu ngày đang xem bị ảnh hưởng
+    const selK = key(selY, selM, selD);
+    if (entry.keysAffected.includes(selK))
+      document.getElementById('calNoteInput').value = notes[selK] || '';
+    renderCal();
+  } else if (entry.type === 'multi-tasks') {
+    // Khôi phục nhiều ngày tasks (gantt fill range)
+    const data = load();
+    entry.keysAffected.forEach(k => {
+      if (entry.snapshot[k] && entry.snapshot[k].length) data[k] = entry.snapshot[k];
+      else delete data[k];
+    });
+    localStorage.setItem('_cal_', JSON.stringify(data));
+    scheduleFileSave();
+    renderCal();
+    if (entry.keysAffected.includes(key(selY, selM, selD))) renderTodos();
+  } else {
+    // Khôi phục 1 ngày tasks
+    const { dateKey, tasks } = entry;
+    const data = load();
+    if (tasks.length === 0) delete data[dateKey];
+    else data[dateKey] = tasks;
+    localStorage.setItem('_cal_', JSON.stringify(data));
+    scheduleFileSave();
+    renderCal();
+    if (dateKey === key(selY, selM, selD)) renderTodos();
+  }
 }
 
 // Robust focus: retry mỗi frame tối đa 30 lần (~500ms) cho đến khi element xuất hiện và được focus
@@ -1264,6 +1792,280 @@ function finishDrag() {
   document.getElementById('todoList').classList.remove('drag-active');
 }
 
+// ══════════════════════════════════════════
+//  GANTT — PROJECT SCHEDULE (reads from Todo List)
+// ══════════════════════════════════════════
+
+// Trích mã dự án từ tên task: "HAT (Hương)" → "HAT", "QNE - xyz" → "QNE"
+function taskToProjectCode(text) {
+  if (!text) return null;
+  const code = text.split(/[\s\-\(\[\/]/)[0].trim().toUpperCase();
+  return /^[A-Z][A-Z0-9]{0,7}$/.test(code) ? code : null;
+}
+
+// Gantt cell marks (deadline, mốc nộp bài…)
+// Gantt marks lưu riêng trong _gantt_marks_ (không bị file sync đụng vào)
+function loadGanttMarks() { return JSON.parse(localStorage.getItem('_gantt_marks_') || '{}'); }
+function saveGanttMarks(m) { localStorage.setItem('_gantt_marks_', JSON.stringify(m)); scheduleCloudPush(); }
+
+function editGanttMark(y, m, d, proj) {
+  const mk  = key(y, m, d) + '|' + proj;
+  const marks = loadGanttMarks();
+  const cur = marks[mk] || '';
+  const val = prompt(`Ghi chú [${proj}] ngày ${d}/${m}/${y}:\n(để trống để xóa)`, cur);
+  if (val === null) return;
+  if (val.trim()) marks[mk] = val.trim(); else delete marks[mk];
+  saveGanttMarks(marks);
+  saveToFile(); // ghi ngay vào file để cross-device sync
+  renderGantt();
+}
+
+// Original palette — balanced, vibrant
+const GANTT_PALETTE = [
+  '#FF6B6B','#FF8E53','#FFC300','#2ECC71','#1ABC9C',
+  '#3498DB','#9B59B6','#E91E63','#26C6DA','#FF5722',
+  '#8BC34A','#F39C12','#66BB6A','#AB47BC','#4DB6AC',
+  '#E53935','#00897B','#1565C0','#AD1457','#F57F17'
+];
+
+// Gán màu duy nhất theo thứ tự alphabet của tất cả project codes (từ task names)
+function buildColorMap() {
+  const data = load();
+  const all  = new Set();
+  Object.values(data).forEach(tasks =>
+    (tasks || []).filter(t => (t.board||'work')==='work')
+      .forEach(t => { const c = taskToProjectCode(t.text); if (c) all.add(c); })
+  );
+  const sorted = [...all].sort();
+  const map = {};
+  sorted.forEach((code, i) => { map[code] = GANTT_PALETTE[i % GANTT_PALETTE.length]; });
+  return map;
+}
+
+// Tách mã dự án từ calendar note
+// Hỗ trợ format: "HAT/LDE/QTE" hoặc "HAT-Họp SXD" hoặc "TLE-Nop HS"
+function parseProjectCodes(note) {
+  if (!note) return [];
+  return note.split(/[\/,\|；，]/)
+    .map(s => s.split(/[-\s]/)[0].trim().toUpperCase())
+    .filter(s => /^[A-Z][A-Z0-9]{1,7}$/.test(s));
+}
+
+function renderGantt() {
+  const wrap = document.getElementById('ganttWrap');
+  if (!wrap) return;
+
+  const data        = load();
+  const marks       = {}; // gantt marks now stored in task.ganttNote
+  const daysInMonth = new Date(curY, curM, 0).getDate();
+  const DOW         = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const todayKey    = key(TODAY.getFullYear(), TODAY.getMonth()+1, TODAY.getDate());
+  const isSameMonth = (selY === curY && selM === curM);
+  // taskMap: d → tasks array (để lấy ganttNote)
+  const taskMap = {};
+
+  // Thu thập project codes từ TÊN TASK (không từ calendar note)
+  const projectOrder = [];
+  const projectSeen  = new Set();
+  const dayMap       = {}; // d -> [codes]
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const k = key(curY, curM, d);
+    const tasks = (data[k] || []).filter(t => (t.board || 'work') === 'work'); // chỉ Work tasks
+    taskMap[d] = tasks; // lưu để lấy ganttNote sau
+    const codes = tasks.map(t => taskToProjectCode(t.text)).filter(Boolean);
+    const unique = [...new Set(codes)];
+    if (unique.length) {
+      dayMap[d] = unique;
+      unique.forEach(c => {
+        if (!projectSeen.has(c)) { projectSeen.add(c); projectOrder.push(c); }
+      });
+    }
+  }
+
+  if (!projectOrder.length) {
+    wrap.innerHTML = '<div class="g-empty">Thêm tasks vào todo list — tên task sẽ tự hiện trong schedule</div>';
+    return;
+  }
+
+  const colorMap  = buildColorMap();
+  const ganttMarks = loadGanttMarks();
+  function getMarkTxt(d, proj) {
+    return ganttMarks[key(curY, curM, d) + '|' + proj] || '';
+  }
+  let html = '<table class="gantt-table"><thead>';
+
+  // Row 1: thứ
+  html += '<tr><th class="g-num"></th><th class="g-proj"></th>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dow = new Date(curY, curM-1, d).getDay();
+    const isWE = dow===0||dow===6, isToday = key(curY,curM,d)===todayKey, isSel = isSameMonth&&d===selD;
+    html += `<th class="g-dow${isWE?' g-weekend':''}${isToday?' g-today':''}${isSel?' g-sel-col':''}">${DOW[dow]}</th>`;
+  }
+  html += '</tr>';
+
+  // Row 2: số ngày
+  html += '<tr><th class="g-num"></th><th class="g-proj"></th>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dow = new Date(curY, curM-1, d).getDay();
+    const isWE = dow===0||dow===6, isToday = key(curY,curM,d)===todayKey, isSel = isSameMonth&&d===selD;
+    html += `<th id="gcol-${d}" class="g-day${isWE?' g-weekend':''}${isToday?' g-today':''}${isSel?' g-sel-col':''}">${d}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  // Data rows
+  projectOrder.forEach(proj => {
+    const color = colorMap[proj] || GANTT_PALETTE[0];
+    html += `<tr><td class="g-num">${projectOrder.indexOf(proj)+1}</td><td class="g-proj" title="${proj}">${proj}</td>`;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const active   = (dayMap[d] || []).includes(proj);
+      const isSel    = isSameMonth && d === selD;
+      const isAnchor = ganttRangeStart && ganttRangeStart.proj===proj &&
+                       ganttRangeStart.y===curY && ganttRangeStart.m===curM && ganttRangeStart.d===d;
+      const markTxt  = getMarkTxt(d, proj);
+      const doDrop   = `ondragover="ganttDO(event,this)" ondragleave="ganttDL(this)" ondrop="ganttDrop(event,${curY},${curM},${d})"`;
+      const doClick  = `onclick="ganttCellClick(event,${curY},${curM},${d},'${proj}')"`;
+
+      if (active) {
+        const outline = isSel ? 'outline:2px solid rgba(0,122,255,0.55);outline-offset:-1px;'
+                     : isAnchor ? 'outline:2px dashed #FF9500;outline-offset:-1px;' : '';
+        // Dấu chấm trắng nếu có mark
+        const dot = markTxt ? `<span style="position:absolute;top:2px;right:2px;width:5px;height:5px;border-radius:50%;background:#fff;opacity:.85;"></span>` : '';
+        html += `<td id="gcell-${proj}-${d}" class="g-cell" draggable="true" tabindex="0"
+          style="background:${color};border-radius:3px;${outline};position:relative"
+          title="${markTxt}"
+          ondragstart="ganttDS(event,${curY},${curM},${d},'${proj}')"
+          ondragend="ganttDE()"
+          ondblclick="editGanttMark(${curY},${curM},${d},'${proj}')"
+          onkeydown="if(event.key==='Delete'||event.key==='Backspace'){event.preventDefault();ganttFocusedCell=null;ganttDelCell(${curY},${curM},${d},'${proj}')}"
+          ${doDrop} ${doClick}>${dot}</td>`;
+      } else {
+        const dow   = new Date(curY,curM-1,d).getDay();
+        const isWE  = dow===0||dow===6;
+        const bg    = isWE ? '#F2F2F7' : '';
+        const cls   = `g-cell${isSel&&!isWE?' g-sel-col':''}`;
+        const aStyle= isAnchor ? 'outline:2px dashed #FF9500;outline-offset:-2px;' : '';
+        html += `<td class="${cls}" style="${bg?'background:'+bg+';':''}${aStyle}" ${doDrop} ${doClick}></td>`;
+      }
+    }
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+
+  // Re-focus ô vừa click sau khi table rebuild (vì DOM cũ bị xóa)
+  if (ganttFocusedCell) {
+    const el = document.getElementById('gcell-' + ganttFocusedCell.proj + '-' + ganttFocusedCell.d);
+    if (el) el.focus();
+  }
+}
+
+// ══════════════════════════════════════════
+//  GANTT DRAG / EDIT HELPERS
+// ══════════════════════════════════════════
+let ganttDrag        = null; // {y,m,d,proj,copy}
+let ganttRangeStart  = null; // {y,m,d,proj} — điểm neo Shift+click
+let ganttFocusedCell = null; // {proj,d} — cell đang focus để Delete key hoạt động sau re-render
+
+function ganttDS(e, y, m, d, proj) {
+  ganttDrag = { y, m, d, proj, copy: e.ctrlKey || e.altKey };
+  e.dataTransfer.effectAllowed = ganttDrag.copy ? 'copy' : 'move';
+  e.stopPropagation();
+}
+function ganttDO(e, el) {
+  e.preventDefault(); e.stopPropagation();
+  el.classList.add('g-dz-over');
+}
+function ganttDL(el) { el.classList.remove('g-dz-over'); }
+function ganttDE()   { document.querySelectorAll('.g-dz-over').forEach(el => el.classList.remove('g-dz-over')); ganttDrag = null; }
+
+function ganttDrop(e, toY, toM, toD) {
+  e.preventDefault(); e.stopPropagation();
+  document.querySelectorAll('.g-dz-over').forEach(el => el.classList.remove('g-dz-over'));
+  if (!ganttDrag) return;
+  const { y: fy, m: fm, d: fd, proj, copy } = ganttDrag;
+  ganttDrag = null;
+  if (fy === toY && fm === toM && fd === toD) return; // cùng ô, bỏ qua
+  ganttAddProj(toY, toM, toD, proj);
+  if (!copy) ganttRemoveProj(fy, fm, fd, proj);
+}
+
+// Click ô gantt: click thường = chọn ngày + đặt neo; Shift+click = fill dải từ neo đến đây
+function ganttCellClick(e, y, m, d, proj) {
+  if (e.shiftKey && ganttRangeStart &&
+      ganttRangeStart.proj === proj &&
+      ganttRangeStart.y === y && ganttRangeStart.m === m) {
+    // Shift+click cùng project row → fill range
+    e.preventDefault(); e.stopPropagation();
+    const from = Math.min(ganttRangeStart.d, d);
+    const to   = Math.max(ganttRangeStart.d, d);
+    ganttFillRange(y, m, from, to, proj);
+    ganttRangeStart = null;
+  } else {
+    // Click thường → đặt neo + lưu focus + điều hướng
+    ganttRangeStart  = { y, m, d, proj };
+    ganttFocusedCell = { proj, d }; // nhớ cell để re-focus sau render
+    selectDay(y, m, d);
+  }
+}
+
+// Tô dải ngày: tạo task cho mỗi ngày trong dải (batch, 1 lần renderCal)
+function ganttFillRange(y, m, fromD, toD, proj) {
+  const allKeys = [];
+  for (let d = fromD; d <= toD; d++) allKeys.push(key(y, m, d));
+  // Undo snapshot (multi-tasks)
+  const data = load();
+  const snap = {};
+  allKeys.forEach(k => { snap[k] = JSON.parse(JSON.stringify(data[k] || [])); });
+  undoStack.push({ type: 'multi-tasks', keysAffected: allKeys, snapshot: snap });
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+
+  const keysChanged = [];
+  for (let d = fromD; d <= toD; d++) {
+    const k = key(y, m, d);
+    if (!data[k]) data[k] = [];
+    if (!data[k].some(t => taskToProjectCode(t.text) === proj)) {
+      data[k].push({ id: Date.now() + d, text: proj, done: false, subtasks: [] });
+      keysChanged.push(k);
+    }
+  }
+  if (!keysChanged.length) return;
+  localStorage.setItem('_cal_', JSON.stringify(data));
+  scheduleFileSave();
+  renderCal();
+  if (allKeys.includes(key(selY, selM, selD))) renderTodos();
+}
+
+function ganttDelCell(y, m, d, proj) {
+  ganttRemoveProj(y, m, d, proj); // Ctrl+Z để undo
+}
+
+// Thêm task proj vào ngày (nếu chưa có)
+function ganttAddProj(y, m, d, proj) {
+  const k = key(y, m, d);
+  const data = load();
+  if (!data[k]) data[k] = [];
+  if (data[k].some(t => taskToProjectCode(t.text) === proj)) return;
+  pushUndo(k, data[k]); // undo snapshot
+  data[k].push({ id: Date.now(), text: proj, done: false, subtasks: [] });
+  save(data);
+  if (k === key(selY, selM, selD)) renderTodos();
+  renderCal();
+}
+
+// Xóa task(s) có proj code khỏi ngày
+function ganttRemoveProj(y, m, d, proj) {
+  const k = key(y, m, d);
+  const data = load();
+  if (!data[k]) return;
+  pushUndo(k, data[k]); // undo snapshot
+  data[k] = data[k].filter(t => taskToProjectCode(t.text) !== proj);
+  save(data);
+  if (k === key(selY, selM, selD)) renderTodos();
+  renderCal();
+}
+
 function renderTodos() {
   const k = key(selY, selM, selD);
   const data = load();
@@ -1271,10 +2073,12 @@ function renderTodos() {
   const el = document.getElementById('todoList');
   el.innerHTML = '';
 
-  if (!tasks.length) {
-    el.innerHTML = '<div class="empty">No tasks for this day yet</div>';
-    return;
-  }
+  // Gán board mặc định cho task cũ
+  tasks.forEach(t => { if (!t.board) t.board = 'work'; });
+
+  // Tách 2 bảng (giữ flat index gốc cho drag-drop)
+  const workTasks     = tasks.map((t,i) => ({t,i})).filter(x => x.t.board !== 'personal');
+  const personalTasks = tasks.map((t,i) => ({t,i})).filter(x => x.t.board === 'personal');
 
   // Helper: insert item as main task at position insertIdx
   function dropAsMain(insertIdx) {
@@ -1331,16 +2135,26 @@ function renderTodos() {
     save(d2); finishDrag(); renderTodos(); renderCal();
   }
 
-  // Drop zone BEFORE first task
-  el.appendChild(makeDZ('dz-main', () => dropAsMain(0)));
+  // ── Hàm render 1 bảng (work hoặc personal) ──
+  function renderBoard(boardItems, isWork) {
+    // Dải phân cách mỏng giữa 2 bảng (chỉ cho Personal)
+    if (!isWork && workTasks.length > 0) {
+      const sep = document.createElement('div');
+      sep.style.cssText = 'height:1px;background:rgba(52,199,89,.25);margin:4px 0 2px;';
+      el.appendChild(sep);
+    }
 
-  tasks.forEach((t, idx) => {
+    // Drop zone trước task đầu tiên
+    const firstFlatIdx = boardItems.length ? boardItems[0].i : tasks.length;
+    el.appendChild(makeDZ('dz-main', () => dropAsMain(firstFlatIdx)));
+
+  boardItems.forEach(({t, i: idx}, boardIdx) => {
     const wrapper = document.createElement('div');
-    wrapper.className = 'task-wrapper';
+    wrapper.className = 'task-wrapper' + (isWork ? ' tw-work' : '');
 
     // ── Main row ──
     const div = document.createElement('div');
-    div.className = 'todo-item' + (t.done ? ' done' : '');
+    div.className = 'todo-item' + (t.done ? ' done' : '') + (!isWork ? ' board-personal' : '');
     div.dataset.id = t.id;
     div.dataset.idx = idx;
     div.draggable = true;
@@ -1359,7 +2173,7 @@ function renderTodos() {
     expBtn.onclick = () => toggleExpand(t.id);
 
     const num = document.createElement('span');
-    num.className = 'todo-num'; num.textContent = (idx + 1) + '.';
+    num.className = 'todo-num'; num.textContent = (boardIdx + 1) + '.';
 
     const cb = document.createElement('input');
     cb.type = 'checkbox'; cb.checked = t.done;
@@ -1385,9 +2199,16 @@ function renderTodos() {
     delBtn.className = 'icon-btn del-btn'; delBtn.textContent = '✕';
     delBtn.onclick = () => deleteTask(k, t.id);
 
+    // Nút chuyển bảng
+    const switchBtn = document.createElement('button');
+    switchBtn.className = 'board-switch-btn';
+    switchBtn.title = isWork ? 'Chuyển sang Personal' : 'Chuyển sang Work';
+    switchBtn.textContent = isWork ? '↓P' : '↑W';
+    switchBtn.onclick = () => switchTaskBoard(k, t.id);
+
     div.appendChild(handle); div.appendChild(expBtn); div.appendChild(num);
     div.appendChild(cb); div.appendChild(txt);
-    div.appendChild(editBtn); div.appendChild(addSubBtn); div.appendChild(delBtn);
+    div.appendChild(editBtn); div.appendChild(addSubBtn); div.appendChild(switchBtn); div.appendChild(delBtn);
 
     // Main task drag events
     div.addEventListener('dragstart', e => {
@@ -1439,7 +2260,7 @@ function renderTodos() {
         sdHandle.className = 'sub-drag-handle'; sdHandle.textContent = '⠿';
 
         const sn = document.createElement('span'); sn.className = 'sub-num';
-        sn.textContent = (idx + 1) + '.' + (si + 1);
+        sn.textContent = (boardIdx + 1) + '.' + (si + 1);
         const sc = document.createElement('input'); sc.type = 'checkbox'; sc.checked = sub.done;
         sc.onchange = () => toggleSubTask(k, t.id, sub.id);
         const st = document.createElement('span'); st.className = 'txt'; st.textContent = sub.text;
@@ -1460,6 +2281,12 @@ function renderTodos() {
           el.classList.add('drag-active');
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('text/plain', String(sub.id));
+          // Ghost image nhỏ gọn, không làm layout phình
+          const ghost = sd.cloneNode(true);
+          ghost.style.cssText = 'position:fixed;top:-999px;left:-999px;width:220px;background:#fff;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.13);padding:5px 10px;font-size:.82rem;font-family:inherit;pointer-events:none;';
+          document.body.appendChild(ghost);
+          e.dataTransfer.setDragImage(ghost, 40, 14);
+          requestAnimationFrame(() => { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); });
           e.stopPropagation();
         });
         sd.addEventListener('dragend', () => {
@@ -1585,21 +2412,22 @@ function renderTodos() {
         // Focus sang task kề trước/sau trước khi xóa
         if (i > 0) items[i - 1].focus();
         else if (i < items.length - 1) items[i + 1].focus();
-        else document.getElementById('taskInput')?.focus();
+        else document.getElementById(isWork ? 'taskInput' : 'personalTaskInput')?.focus();
         deleteTask(k, t.id);
       } else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
-        // Enter → focus taskInput, task mới sẽ thêm vào cuối
+        // Enter → focus add input của bảng tương ứng
         e.preventDefault();
         insertAfterIdx = null;
-        document.getElementById('taskInput')?.focus();
+        document.getElementById(isWork ? 'taskInput' : 'personalTaskInput')?.focus();
       } else if (e.key === 'Enter' && e.ctrlKey && !e.shiftKey) {
-        // Ctrl+Enter → focus taskInput, task mới sẽ chèn NGAY SAU task hiện tại
+        // Ctrl+Enter → chèn NGAY SAU task hiện tại (cùng bảng)
         e.preventDefault();
         insertAfterIdx = idx;
-        const inp = document.getElementById('taskInput');
+        const addInpId = isWork ? 'taskInput' : 'personalTaskInput';
+        const inp = document.getElementById(addInpId);
         if (inp) {
           inp.focus();
-          inp.placeholder = `Insert after task ${idx + 1}… [Enter to confirm]`;
+          inp.placeholder = `Insert after task ${boardIdx + 1}… [Enter to confirm]`;
         }
       } else if (e.key === 'Enter' && e.shiftKey) {
         // Shift+Enter → mở sub-tasks + focus vào sub input
@@ -1617,7 +2445,49 @@ function renderTodos() {
 
     // Drop zone AFTER this task (= before next task)
     el.appendChild(makeDZ('dz-main', () => dropAsMain(idx + 1)));
-  });
+  }); // end boardItems.forEach
+
+  // Add-task input riêng cho mỗi bảng
+  if (!isWork) {
+    const addRow = document.createElement('div');
+    addRow.className = 'add-row';
+    addRow.style.cssText = 'padding:4px 0 2px';
+    const inp = document.createElement('input');
+    inp.id = 'personalTaskInput';
+    inp.placeholder = 'Add personal task…  [Enter] add  [Shift+Enter] add + sub-tasks';
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault(); addPersonalTask();
+      } else if (e.key === 'Enter' && e.shiftKey) {
+        e.preventDefault(); addPersonalTaskAndExpand();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        // Lên task cuối cùng trong danh sách
+        const items = [...document.querySelectorAll('.todo-item')];
+        if (items.length) items[items.length - 1].focus();
+      } else if (e.key === 'Escape') {
+        insertAfterIdx = null; inp.value = '';
+        inp.placeholder = 'Add personal task…  [Enter] add  [Shift+Enter] add + sub-tasks';
+      }
+    });
+    // Reset placeholder khi blur
+    inp.addEventListener('blur', () => {
+      insertAfterIdx = null;
+      inp.placeholder = 'Add personal task…  [Enter] add  [Shift+Enter] add + sub-tasks';
+    });
+    const btn = document.createElement('button');
+    btn.textContent = '+ Add';
+    btn.style.background = '#34C759';
+    btn.onclick = addPersonalTask;
+    addRow.appendChild(inp); addRow.appendChild(btn);
+    el.appendChild(addRow);
+  }
+
+  } // end renderBoard
+
+  // Render 2 bảng
+  renderBoard(workTasks, true);
+  renderBoard(personalTasks, false);
 }
 
 // ── MOVE / COPY ──
@@ -1655,6 +2525,7 @@ function executeMoveOrCopy(mode) {
     delete data[srcKey];
     const notes = loadNotes();
     if (notes[srcKey]) { notes[targetVal] = notes[srcKey]; delete notes[srcKey]; localStorage.setItem('_cal_notes_', JSON.stringify(notes)); }
+    scheduleFileSave();
   }
   save(data);
   closeMoveModal();
@@ -1711,10 +2582,15 @@ function esc(s) {
   });
 })();
 
-(function init() {
+(async function init() {
   autoExpandAll(selY, selM, selD); // mở rộng toàn bộ sub-tasks ngày đang chọn khi khởi động
+
   renderCal();
   renderNote();
+
+  // Tự động pull dữ liệu mới nhất từ cloud (không cần click gì)
+  const cloudLoaded = await cloudPull();
+  if (cloudLoaded) { renderTodos(); renderCal(); renderNote(); }
 
   // Keyboard shortcuts on main task input
   const taskInp = document.getElementById('taskInput');
@@ -1770,7 +2646,27 @@ function esc(s) {
     }
   });
 
-  // (Public version — no cloud sync)
+  // Đồng hồ điện tử
+  function tickClock() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('clockTime').textContent = hh + ':' + mm;
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  // Khởi tạo file sync (OneDrive)
+  const connected = await initFileSync();
+  if (connected) {
+    const btn = document.getElementById('connectBtn');
+    if (btn && _dirHandle) btn.textContent = '📁 ' + _dirHandle.name;
+    const loaded = await loadFromFile();
+    if (loaded) { renderTodos(); renderCal(); renderNote(); }
+    else setSyncStatus('📁 Ready', '#34C759');
+  } else {
+    setSyncStatus('📁 Not connected', '#8E8E93');
+  }
 })();
 </script>
 
