@@ -731,7 +731,7 @@ input[type=checkbox]:checked::after {
   padding: 8px 18px 6px;
   flex-shrink: 0;
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 16px;
 }
 .gantt-scroll {
@@ -824,6 +824,11 @@ input[type=checkbox]:checked::after {
   line-height: 1.5;
   outline: none;
   padding: 2px 1px;
+}
+.sn-editor ol, .sn-editor ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
 }
 .sn-editor:empty:before {
   content: attr(data-placeholder);
@@ -1062,7 +1067,7 @@ input[type=checkbox]:checked::after {
       <button onmousedown="snSaveSelection()" onclick="snExec('justifyCenter')" title="Căn giữa">≡</button>
       <button onmousedown="snSaveSelection()" onclick="snExec('justifyRight')" title="Căn phải">⟹</button>
       <span class="sn-sep"></span>
-      <button onmousedown="snSaveSelection()" onclick="snInsertToggle()" title="Toggle list — thu gọn/mở rộng đoạn đã chọn">▸ Toggle</button>
+      <button onmousedown="snSaveSelection()" onclick="snInsertToggle()" title="Toggle list — thu gọn/mở rộng đoạn đã chọn">▸</button>
       <span class="sn-sep"></span>
       <button onmousedown="snSaveSelection()" onclick="snExec('undo')" title="Hoàn tác (Ctrl+Z)">↶</button>
       <button onmousedown="snSaveSelection()" onclick="snExec('redo')" title="Làm lại (Ctrl+Y)">↷</button>
@@ -2237,6 +2242,17 @@ function renderGantt() {
     const el = document.getElementById('gcell-' + ganttFocusedCell.proj + '-' + ganttFocusedCell.d);
     if (el) el.focus();
   }
+
+  syncNotesPanelHeight();
+}
+
+// Giữ khung ghi chú đúng bằng chiều cao bảng Gantt — không để hở khoảng trống,
+// không để nội dung note dài đẩy phình cả layout (note tự cuộn riêng trong khung này)
+function syncNotesPanelHeight() {
+  const ganttBox = document.querySelector('.gantt-scroll');
+  const notesBox = document.querySelector('.schedule-notes');
+  if (!ganttBox || !notesBox) return;
+  notesBox.style.height = ganttBox.offsetHeight + 'px';
 }
 
 // ══════════════════════════════════════════
@@ -2875,6 +2891,7 @@ function esc(s) {
     const arrow = e.target.closest('.sn-toggle-arrow');
     if (arrow) snToggleFold(arrow.closest('.sn-toggle'));
   });
+  window.addEventListener('resize', syncNotesPanelHeight);
 
   // Tự động pull dữ liệu mới nhất từ cloud (không cần click gì)
   const cloudLoaded = await cloudPull();
