@@ -746,6 +746,26 @@ input[type=checkbox]:checked::after {
   white-space: nowrap;
   vertical-align: middle;
 }
+.gantt-table .g-days {
+  font-size: 9px;
+  font-weight: 600;
+  color: #aeaeb2;
+  text-align: right;
+  padding: 0 8px 0 4px;
+  min-width: 22px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.g-days-icon {
+  cursor: pointer;
+  user-select: none;
+  font-size: 10px;
+  opacity: 0.5;
+  display: inline-block;
+  line-height: 1;
+  vertical-align: middle;
+}
+.g-days-icon:hover { opacity: 0.85; }
 .gantt-table .g-proj {
   font-size: 11px;
   font-weight: 600;
@@ -1888,15 +1908,35 @@ function renderGantt() {
     return;
   }
 
+  // Đếm số ngày mỗi project xuất hiện trong tháng
+  const dayCountMap = {};
+  projectOrder.forEach(proj => {
+    let cnt = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      if ((dayMap[d] || []).includes(proj)) cnt++;
+    }
+    dayCountMap[proj] = cnt;
+  });
+
+  // Sắp xếp theo mode
+  let sortedOrder = [...projectOrder];
+  if (ganttSortMode === 'asc') {
+    sortedOrder.sort((a, b) => dayCountMap[a] - dayCountMap[b]);
+  } else if (ganttSortMode === 'desc') {
+    sortedOrder.sort((a, b) => dayCountMap[b] - dayCountMap[a]);
+  }
+
   const colorMap  = buildColorMap();
   const ganttMarks = loadGanttMarks();
   function getMarkTxt(d, proj) {
     return ganttMarks[key(curY, curM, d) + '|' + proj] || '';
   }
+
+  const sortIcon = ganttSortMode === 'asc' ? '↑' : ganttSortMode === 'desc' ? '↓' : '⇅';
   let html = '<table class="gantt-table"><thead>';
 
   // Row 1: thứ
-  html += '<tr><th class="g-num"></th><th class="g-proj"></th>';
+  html += '<tr><th class="g-num"></th><th class="g-proj"></th><th class="g-days"></th>';
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = new Date(curY, curM-1, d).getDay();
     const isWE = dow===0||dow===6, isToday = key(curY,curM,d)===todayKey, isSel = isSameMonth&&d===selD;
@@ -1905,7 +1945,7 @@ function renderGantt() {
   html += '</tr>';
 
   // Row 2: số ngày
-  html += '<tr><th class="g-num"></th><th class="g-proj"></th>';
+  html += `<tr><th class="g-num"></th><th class="g-proj"></th><th class="g-days"><span class="g-days-icon" onclick="setGanttSort(ganttSortMode==='original'?'asc':ganttSortMode==='asc'?'desc':'original')" title="Sắp xếp theo số ngày">${sortIcon}</span></th>`;
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = new Date(curY, curM-1, d).getDay();
     const isWE = dow===0||dow===6, isToday = key(curY,curM,d)===todayKey, isSel = isSameMonth&&d===selD;
@@ -1914,9 +1954,10 @@ function renderGantt() {
   html += '</tr></thead><tbody>';
 
   // Data rows
-  projectOrder.forEach(proj => {
+  sortedOrder.forEach((proj, sortedIdx) => {
     const color = colorMap[proj] || GANTT_PALETTE[0];
-    html += `<tr><td class="g-num">${projectOrder.indexOf(proj)+1}</td><td class="g-proj" title="${proj}">${proj}</td>`;
+    const dCount = dayCountMap[proj] || 0;
+    html += `<tr><td class="g-num">${sortedIdx+1}</td><td class="g-proj" title="${proj}">${proj}</td><td class="g-days">${dCount}d</td>`;
     for (let d = 1; d <= daysInMonth; d++) {
       const active   = (dayMap[d] || []).includes(proj);
       const isSel    = isSameMonth && d === selD;
@@ -1967,6 +2008,12 @@ function renderGantt() {
 let ganttDrag        = null; // {y,m,d,proj,copy}
 let ganttRangeStart  = null; // {y,m,d,proj} — điểm neo Shift+click
 let ganttFocusedCell = null; // {proj,d} — cell đang focus để Delete key hoạt động sau re-render
+let ganttSortMode    = 'original'; // 'original' | 'asc' | 'desc'
+
+function setGanttSort(mode) {
+  ganttSortMode = mode;
+  renderGantt();
+}
 
 function ganttDS(e, y, m, d, proj) {
   ganttDrag = { y, m, d, proj, copy: e.ctrlKey || e.altKey };
