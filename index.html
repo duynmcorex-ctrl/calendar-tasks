@@ -1035,13 +1035,14 @@ input[type=checkbox]:checked::after {
 
   <div class="schedule-notes">
     <div class="sn-toolbar">
-      <select class="sn-size" onmousedown="snSaveSelection()" onchange="snExec('fontSize', this.value)" title="Cỡ chữ">
-        <option value="1">10</option>
-        <option value="2">12</option>
-        <option value="3" selected>14</option>
-        <option value="4">16</option>
-        <option value="5">18</option>
-        <option value="6">24</option>
+      <select class="sn-size" onmousedown="snSaveSelection()" onchange="snSetFontSize(this.value)" title="Cỡ chữ">
+        <option value="10">10</option>
+        <option value="10.5">10.5</option>
+        <option value="11">11</option>
+        <option value="11.5">11.5</option>
+        <option value="12" selected>12</option>
+        <option value="12.5">12.5</option>
+        <option value="13">13</option>
       </select>
       <span class="sn-sep"></span>
       <button onmousedown="snSaveSelection()" onclick="snExec('bold')" title="Đậm (Ctrl+B)"><b>B</b></button>
@@ -2020,6 +2021,26 @@ function snExec(cmd, val) {
     sel.addRange(_snSavedRange);
   }
   document.execCommand(cmd, false, val);
+  saveScheduleNote();
+}
+
+// execCommand('fontSize') chỉ nhận mức 1-7 (cố định), không hỗ trợ px lẻ như 10.5/11.5.
+// Dùng mẹo: tạo <font size=7> rồi thay bằng <span style="font-size:Xpx"> để có cỡ chữ tuỳ ý.
+function snSetFontSize(px) {
+  const ed = document.getElementById('scheduleNoteEditor');
+  ed.focus();
+  if (_snSavedRange) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(_snSavedRange);
+  }
+  document.execCommand('fontSize', false, '7');
+  ed.querySelectorAll('font[size="7"]').forEach(f => {
+    const span = document.createElement('span');
+    span.style.fontSize = px + 'px';
+    while (f.firstChild) span.appendChild(f.firstChild);
+    f.parentNode.replaceChild(span, f);
+  });
   saveScheduleNote();
 }
 function snToggleColorPop(e) {
