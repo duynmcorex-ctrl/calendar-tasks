@@ -776,22 +776,17 @@ input[type=checkbox]:checked::after {
   background: rgba(60,60,67,.12);
   margin: 0 2px;
 }
-.sn-color {
-  position: relative;
-  font-size: 11px;
-  color: #c7c7cc;
+.sn-swatches { display: inline-flex; gap: 3px; align-items: center; padding: 0 2px; }
+.sn-swatch {
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,.08);
+  padding: 0;
   cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 4px;
+  opacity: .55;
+  transition: opacity .12s, transform .12s;
 }
-.sn-color:hover { background: #f2f2f7; color: #8e8e93; }
-.sn-color input[type=color] {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  width: 100%;
-}
+.sn-swatch:hover { opacity: 1; transform: scale(1.15); }
 .sn-editor {
   flex: 1;
   min-height: 60px;
@@ -990,7 +985,7 @@ input[type=checkbox]:checked::after {
 
   <div class="schedule-notes">
     <div class="sn-toolbar">
-      <select class="sn-size" onchange="snExec('fontSize', this.value)" title="Cỡ chữ">
+      <select class="sn-size" onmousedown="snSaveSelection()" onchange="snExec('fontSize', this.value)" title="Cỡ chữ">
         <option value="1">10</option>
         <option value="2">12</option>
         <option value="3" selected>14</option>
@@ -999,24 +994,30 @@ input[type=checkbox]:checked::after {
         <option value="6">24</option>
       </select>
       <span class="sn-sep"></span>
-      <button onclick="snExec('bold')" title="Đậm (Ctrl+B)"><b>B</b></button>
-      <button onclick="snExec('italic')" title="Nghiêng (Ctrl+I)"><i>I</i></button>
-      <button onclick="snExec('underline')" title="Gạch chân (Ctrl+U)"><u>U</u></button>
-      <button onclick="snExec('strikeThrough')" title="Gạch ngang"><s>S</s></button>
+      <button onmousedown="snSaveSelection()" onclick="snExec('bold')" title="Đậm (Ctrl+B)"><b>B</b></button>
+      <button onmousedown="snSaveSelection()" onclick="snExec('italic')" title="Nghiêng (Ctrl+I)"><i>I</i></button>
+      <button onmousedown="snSaveSelection()" onclick="snExec('underline')" title="Gạch chân (Ctrl+U)"><u>U</u></button>
+      <button onmousedown="snSaveSelection()" onclick="snExec('strikeThrough')" title="Gạch ngang"><s>S</s></button>
       <span class="sn-sep"></span>
-      <label class="sn-color" title="Màu chữ">
-        A<input type="color" onchange="snExec('foreColor', this.value)" value="#1c1c1e">
-      </label>
+      <span class="sn-swatches" title="Màu chữ">
+        <button class="sn-swatch" style="background:#FF3B30" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#FF3B30')" title="Đỏ"></button>
+        <button class="sn-swatch" style="background:#1C1C1E" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#1C1C1E')" title="Đen"></button>
+        <button class="sn-swatch" style="background:#007AFF" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#007AFF')" title="Xanh dương"></button>
+        <button class="sn-swatch" style="background:#34C759" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#34C759')" title="Xanh lá"></button>
+        <button class="sn-swatch" style="background:#FF2D55" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#FF2D55')" title="Hồng"></button>
+        <button class="sn-swatch" style="background:#FF9500" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#FF9500')" title="Cam"></button>
+        <button class="sn-swatch" style="background:#AF52DE" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#AF52DE')" title="Tím"></button>
+      </span>
       <span class="sn-sep"></span>
-      <button onclick="snExec('justifyLeft')" title="Căn trái">⟸</button>
-      <button onclick="snExec('justifyCenter')" title="Căn giữa">≡</button>
-      <button onclick="snExec('justifyRight')" title="Căn phải">⟹</button>
+      <button onmousedown="snSaveSelection()" onclick="snExec('justifyLeft')" title="Căn trái">⟸</button>
+      <button onmousedown="snSaveSelection()" onclick="snExec('justifyCenter')" title="Căn giữa">≡</button>
+      <button onmousedown="snSaveSelection()" onclick="snExec('justifyRight')" title="Căn phải">⟹</button>
       <span class="sn-sep"></span>
-      <button onclick="snExec('insertOrderedList')" title="Đánh số">1.</button>
-      <button onclick="snExec('insertUnorderedList')" title="Bullet">•</button>
+      <button onmousedown="snSaveSelection()" onclick="snExec('insertOrderedList')" title="Đánh số">1.</button>
+      <button onmousedown="snSaveSelection()" onclick="snExec('insertUnorderedList')" title="Bullet">•</button>
       <span class="sn-sep"></span>
-      <button onclick="snExec('undo')" title="Hoàn tác (Ctrl+Z)">↶</button>
-      <button onclick="snExec('redo')" title="Làm lại (Ctrl+Y)">↷</button>
+      <button onmousedown="snSaveSelection()" onclick="snExec('undo')" title="Hoàn tác (Ctrl+Z)">↶</button>
+      <button onmousedown="snSaveSelection()" onclick="snExec('redo')" title="Làm lại (Ctrl+Y)">↷</button>
     </div>
     <div class="sn-editor" id="scheduleNoteEditor" contenteditable="true"
          oninput="saveScheduleNote()" data-placeholder="Ghi chú…"></div>
@@ -1948,10 +1949,45 @@ function saveScheduleNote() {
   clearTimeout(_snSaveTimer);
   _snSaveTimer = setTimeout(() => { scheduleFileSave(); scheduleCloudPush(); }, 500);
 }
+// Lưu/khôi phục vùng chọn — click toolbar (button/select) làm editor mất focus
+// nên phải tự lưu lại selection trước khi nó bị mất, rồi khôi phục lại để execCommand áp dụng đúng chỗ.
+let _snSavedRange = null;
+function snSaveSelection() {
+  const ed = document.getElementById('scheduleNoteEditor');
+  const sel = window.getSelection();
+  if (sel.rangeCount > 0 && ed.contains(sel.anchorNode)) {
+    _snSavedRange = sel.getRangeAt(0).cloneRange();
+  }
+}
 function snExec(cmd, val) {
   const ed = document.getElementById('scheduleNoteEditor');
   ed.focus();
+  if (_snSavedRange) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(_snSavedRange);
+  }
   document.execCommand(cmd, false, val);
+  saveScheduleNote();
+}
+
+// Tự động chuyển "- " → bullet, "1. " → đánh số (giống Word) khi đang gõ
+function snAutoList(e) {
+  if (e.key !== ' ') return;
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  if (!range.collapsed || range.startContainer.nodeType !== Node.TEXT_NODE) return;
+  const textBefore = range.startContainer.textContent.slice(0, range.startOffset);
+  const isBullet = /^-$/.test(textBefore);
+  const isNumber = /^1\.$/.test(textBefore);
+  if (!isBullet && !isNumber) return;
+  e.preventDefault();
+  const delRange = document.createRange();
+  delRange.setStart(range.startContainer, 0);
+  delRange.setEnd(range.startContainer, range.startOffset);
+  delRange.deleteContents();
+  document.execCommand(isBullet ? 'insertUnorderedList' : 'insertOrderedList');
   saveScheduleNote();
 }
 function saveGanttMarks(m) { localStorage.setItem('_gantt_marks_', JSON.stringify(m)); scheduleCloudPush(); }
@@ -2760,6 +2796,7 @@ function esc(s) {
   renderCal();
   renderNote();
   document.getElementById('scheduleNoteEditor').innerHTML = loadScheduleNote();
+  document.getElementById('scheduleNoteEditor').addEventListener('keydown', snAutoList);
 
   // Tự động pull dữ liệu mới nhất từ cloud (không cần click gì)
   const cloudLoaded = await cloudPull();
