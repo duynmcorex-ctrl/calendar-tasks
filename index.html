@@ -731,7 +731,7 @@ input[type=checkbox]:checked::after {
   padding: 8px 18px 6px;
   flex-shrink: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 16px;
 }
 .gantt-scroll {
@@ -776,21 +776,48 @@ input[type=checkbox]:checked::after {
   background: rgba(60,60,67,.12);
   margin: 0 2px;
 }
-.sn-swatches { display: inline-flex; gap: 3px; align-items: center; padding: 0 2px; }
+.sn-color-wrap { position: relative; display: inline-flex; }
+.sn-color-trigger {
+  background: transparent;
+  border: none;
+  color: #c7c7cc;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.sn-color-trigger:hover { background: #f2f2f7; color: #8e8e93; }
+.sn-swatches {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  gap: 5px;
+  align-items: center;
+  background: #fff;
+  border-radius: 9px;
+  padding: 6px 7px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.16);
+  z-index: 30;
+}
+.sn-swatches.open { display: flex; }
 .sn-swatch {
-  width: 11px; height: 11px;
+  width: 13px; height: 13px;
   border-radius: 50%;
   border: 1px solid rgba(0,0,0,.08);
   padding: 0;
   cursor: pointer;
-  opacity: .55;
+  opacity: .85;
   transition: opacity .12s, transform .12s;
 }
-.sn-swatch:hover { opacity: 1; transform: scale(1.15); }
+.sn-swatch:hover { opacity: 1; transform: scale(1.2); }
 .sn-editor {
   flex: 1;
   min-height: 60px;
-  max-height: 150px;
   overflow-y: auto;
   font-size: 12.5px;
   color: #1c1c1e;
@@ -999,14 +1026,17 @@ input[type=checkbox]:checked::after {
       <button onmousedown="snSaveSelection()" onclick="snExec('underline')" title="Gạch chân (Ctrl+U)"><u>U</u></button>
       <button onmousedown="snSaveSelection()" onclick="snExec('strikeThrough')" title="Gạch ngang"><s>S</s></button>
       <span class="sn-sep"></span>
-      <span class="sn-swatches" title="Màu chữ">
-        <button class="sn-swatch" style="background:#FF3B30" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#FF3B30')" title="Đỏ"></button>
-        <button class="sn-swatch" style="background:#1C1C1E" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#1C1C1E')" title="Đen"></button>
-        <button class="sn-swatch" style="background:#007AFF" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#007AFF')" title="Xanh dương"></button>
-        <button class="sn-swatch" style="background:#34C759" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#34C759')" title="Xanh lá"></button>
-        <button class="sn-swatch" style="background:#FF2D55" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#FF2D55')" title="Hồng"></button>
-        <button class="sn-swatch" style="background:#FF9500" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#FF9500')" title="Cam"></button>
-        <button class="sn-swatch" style="background:#AF52DE" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#AF52DE')" title="Tím"></button>
+      <span class="sn-color-wrap">
+        <button class="sn-color-trigger" onmousedown="snSaveSelection()" onclick="snToggleColorPop(event)" title="Màu chữ">A</button>
+        <span class="sn-swatches" id="snColorPop">
+          <button class="sn-swatch" style="background:#FF3B30" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#FF3B30');snCloseColorPop()" title="Đỏ"></button>
+          <button class="sn-swatch" style="background:#1C1C1E" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#1C1C1E');snCloseColorPop()" title="Đen"></button>
+          <button class="sn-swatch" style="background:#007AFF" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#007AFF');snCloseColorPop()" title="Xanh dương"></button>
+          <button class="sn-swatch" style="background:#34C759" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#34C759');snCloseColorPop()" title="Xanh lá"></button>
+          <button class="sn-swatch" style="background:#FF2D55" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#FF2D55');snCloseColorPop()" title="Hồng"></button>
+          <button class="sn-swatch" style="background:#FF9500" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#FF9500');snCloseColorPop()" title="Cam"></button>
+          <button class="sn-swatch" style="background:#AF52DE" onmousedown="snSaveSelection()" onclick="snExec('foreColor','#AF52DE');snCloseColorPop()" title="Tím"></button>
+        </span>
       </span>
       <span class="sn-sep"></span>
       <button onmousedown="snSaveSelection()" onclick="snExec('justifyLeft')" title="Căn trái">⟸</button>
@@ -1970,26 +2000,14 @@ function snExec(cmd, val) {
   document.execCommand(cmd, false, val);
   saveScheduleNote();
 }
-
-// Tự động chuyển "- " → bullet, "1. " → đánh số (giống Word) khi đang gõ
-function snAutoList(e) {
-  if (e.key !== ' ') return;
-  const sel = window.getSelection();
-  if (!sel.rangeCount) return;
-  const range = sel.getRangeAt(0);
-  if (!range.collapsed || range.startContainer.nodeType !== Node.TEXT_NODE) return;
-  const textBefore = range.startContainer.textContent.slice(0, range.startOffset);
-  const isBullet = /^-$/.test(textBefore);
-  const isNumber = /^1\.$/.test(textBefore);
-  if (!isBullet && !isNumber) return;
-  e.preventDefault();
-  const delRange = document.createRange();
-  delRange.setStart(range.startContainer, 0);
-  delRange.setEnd(range.startContainer, range.startOffset);
-  delRange.deleteContents();
-  document.execCommand(isBullet ? 'insertUnorderedList' : 'insertOrderedList');
-  saveScheduleNote();
+function snToggleColorPop(e) {
+  e.stopPropagation();
+  document.getElementById('snColorPop').classList.toggle('open');
 }
+function snCloseColorPop() {
+  document.getElementById('snColorPop').classList.remove('open');
+}
+
 function saveGanttMarks(m) { localStorage.setItem('_gantt_marks_', JSON.stringify(m)); scheduleCloudPush(); }
 
 function editGanttMark(y, m, d, proj) {
@@ -2749,6 +2767,7 @@ function executeMoveOrCopy(mode) {
 document.addEventListener('click', e => {
   if (e.target.id === 'moveModal') closeMoveModal();
   if (e.target.id === 'cloudModal') closeCloudModal();
+  if (!e.target.closest('.sn-color-wrap')) snCloseColorPop();
 });
 
 function esc(s) {
@@ -2796,7 +2815,6 @@ function esc(s) {
   renderCal();
   renderNote();
   document.getElementById('scheduleNoteEditor').innerHTML = loadScheduleNote();
-  document.getElementById('scheduleNoteEditor').addEventListener('keydown', snAutoList);
 
   // Tự động pull dữ liệu mới nhất từ cloud (không cần click gì)
   const cloudLoaded = await cloudPull();
