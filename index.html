@@ -680,7 +680,8 @@ input[type=checkbox]:checked::after {
 }
 .modal-title { font-weight: 700; font-size: 1rem; color: #1C1C1E; letter-spacing: -.3px; }
 .modal-sub   { font-size: .82rem; color: #8E8E93; }
-.modal-box input[type=date] {
+.modal-box input[type=date],
+.modal-box input[type=text] {
   width: 100%;
   border: 1.5px solid #E5E5EA;
   border-radius: 12px;
@@ -689,8 +690,26 @@ input[type=checkbox]:checked::after {
   font-family: inherit;
   outline: none;
   color: #1C1C1E;
+  box-sizing: border-box;
 }
-.modal-box input[type=date]:focus { border-color: #007AFF; }
+.modal-box input[type=date]:focus,
+.modal-box input[type=text]:focus { border-color: #007AFF; }
+.modal-box .field-label {
+  font-size: .75rem;
+  font-weight: 600;
+  color: #3C3C43;
+  margin-bottom: 4px;
+  display: block;
+}
+.modal-box .cloud-steps {
+  font-size: .78rem;
+  color: #6e6e73;
+  line-height: 1.55;
+  background: #F2F2F7;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.modal-box .cloud-steps b { color: #1C1C1E; }
 .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
 .modal-btns button {
   border: none;
@@ -1263,23 +1282,20 @@ async function cloudPush() {
 
 function openCloudSetup() {
   const cfg = loadCloudCfg() || {};
-  const msg =
-`☁️ CLOUD SYNC SETUP (JSONBin.io — miễn phí)
+  document.getElementById('cloudBinId').value  = cfg.binId  || '';
+  document.getElementById('cloudApiKey').value = cfg.apiKey || '';
+  document.getElementById('cloudModal').classList.add('open');
+}
+function closeCloudModal() {
+  document.getElementById('cloudModal').classList.remove('open');
+}
+function saveCloudSetup() {
+  const binId  = document.getElementById('cloudBinId').value.trim();
+  const apiKey = document.getElementById('cloudApiKey').value.trim();
+  if (!binId || !apiKey) { alert('Cần điền đủ cả 2 trường!'); return; }
 
-Bước 1: Vào jsonbin.io → Sign up (free)
-Bước 2: Nhấn "+ New Bin" → tạo bin rỗng {}
-Bước 3: Copy Bin ID (trong URL) và Master Key (Account Settings → API Keys)
-Bước 4: Nhập vào bên dưới — setup 1 lần, dùng mãi mãi ✓
-
-Bin ID hiện tại: ${cfg.binId || '(chưa có)'}`;
-
-  const binId  = prompt(msg + '\n\nNhập Bin ID:', cfg.binId || '');
-  if (binId === null) return;
-  const apiKey = prompt('Nhập X-Master-Key:', cfg.apiKey || '');
-  if (apiKey === null) return;
-  if (!binId.trim() || !apiKey.trim()) { alert('Cần điền đủ cả 2 trường!'); return; }
-
-  saveCloudCfg({ binId: binId.trim(), apiKey: apiKey.trim() });
+  saveCloudCfg({ binId, apiKey });
+  closeCloudModal();
 
   cloudPull().then(loaded => {
     if (loaded) { renderTodos(); renderCal(); renderNote(); }
@@ -2588,6 +2604,7 @@ function executeMoveOrCopy(mode) {
 // Close modal on overlay click
 document.addEventListener('click', e => {
   if (e.target.id === 'moveModal') closeMoveModal();
+  if (e.target.id === 'cloudModal') closeCloudModal();
 });
 
 function esc(s) {
@@ -2727,6 +2744,32 @@ function esc(s) {
       <button class="btn-cancel" onclick="closeMoveModal()">Cancel</button>
       <button class="btn-copy" onclick="executeMoveOrCopy('copy')">📋 Copy to date</button>
       <button class="btn-move" onclick="executeMoveOrCopy('move')">✂️ Move to date</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLOUD SYNC SETUP MODAL -->
+<div class="modal-overlay" id="cloudModal">
+  <div class="modal-box" style="min-width:340px">
+    <div class="modal-title">☁️ Cloud Sync Setup (JSONBin.io)</div>
+    <div class="cloud-steps">
+      <b>Bước 1:</b> Vào jsonbin.io → Sign up (free)<br>
+      <b>Bước 2:</b> Nhấn "+ New Bin" → tạo bin rỗng {}<br>
+      <b>Bước 3:</b> Copy Bin ID (trong URL) và Master Key (Account Settings → API Keys)<br>
+      <b>Bước 4:</b> Dán vào 2 ô dưới — setup 1 lần, dùng mãi mãi ✓<br>
+      <span style="color:#aeaeb2">Bảng này không tự đóng khi đổi tab — cứ qua jsonbin.io copy rồi quay lại dán.</span>
+    </div>
+    <div>
+      <span class="field-label">Bin ID</span>
+      <input type="text" id="cloudBinId" placeholder="vd: 64f1a2b3c45d6e7f8a9b0c1d">
+    </div>
+    <div>
+      <span class="field-label">X-Master-Key</span>
+      <input type="text" id="cloudApiKey" placeholder="vd: $2b$10$...">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeCloudModal()">Cancel</button>
+      <button class="btn-move" onclick="saveCloudSetup()">Lưu & Kết nối</button>
     </div>
   </div>
 </div>
