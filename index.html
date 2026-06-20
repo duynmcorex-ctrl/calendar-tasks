@@ -817,7 +817,7 @@ input[type=checkbox]:checked::after {
 .sn-swatch:hover { opacity: 1; transform: scale(1.2); }
 .sn-editor {
   flex: 1;
-  min-height: 60px;
+  min-height: 0; /* bắt buộc để overflow-y:auto thực sự cuộn trong flex column, không bị giãn quá nội dung */
   overflow-y: auto;
   font-size: 12.5px;
   color: #1c1c1e;
@@ -829,6 +829,25 @@ input[type=checkbox]:checked::after {
   content: attr(data-placeholder);
   color: #c7c7cc;
 }
+/* Toggle list — khối có thể thu gọn/mở rộng, giống Notion */
+.sn-toggle { margin: 3px 0; }
+.sn-toggle-head { display: flex; align-items: flex-start; gap: 4px; }
+.sn-toggle-arrow {
+  cursor: pointer;
+  user-select: none;
+  font-size: 9px;
+  color: #8e8e93;
+  margin-top: 2px;
+  flex-shrink: 0;
+  transition: transform .1s;
+}
+.sn-toggle-label { font-weight: 600; outline: none; }
+.sn-toggle-body {
+  margin-left: 13px;
+  padding-left: 8px;
+  border-left: 1.5px solid rgba(60,60,67,.12);
+}
+.sn-toggle.collapsed .sn-toggle-body { display: none; }
 .gantt-footer {
   font-size: 10px;
   color: #aeaeb2;
@@ -1043,8 +1062,7 @@ input[type=checkbox]:checked::after {
       <button onmousedown="snSaveSelection()" onclick="snExec('justifyCenter')" title="Căn giữa">≡</button>
       <button onmousedown="snSaveSelection()" onclick="snExec('justifyRight')" title="Căn phải">⟹</button>
       <span class="sn-sep"></span>
-      <button onmousedown="snSaveSelection()" onclick="snExec('insertOrderedList')" title="Đánh số">1.</button>
-      <button onmousedown="snSaveSelection()" onclick="snExec('insertUnorderedList')" title="Bullet">•</button>
+      <button onmousedown="snSaveSelection()" onclick="snInsertToggle()" title="Toggle list — thu gọn/mở rộng đoạn đã chọn">▸ Toggle</button>
       <span class="sn-sep"></span>
       <button onmousedown="snSaveSelection()" onclick="snExec('undo')" title="Hoàn tác (Ctrl+Z)">↶</button>
       <button onmousedown="snSaveSelection()" onclick="snExec('redo')" title="Làm lại (Ctrl+Y)">↷</button>
@@ -2008,6 +2026,43 @@ function snCloseColorPop() {
   document.getElementById('snColorPop').classList.remove('open');
 }
 
+// Toggle list — bọc đoạn đang chọn (hoặc dòng đang đứng) vào 1 khối có thể thu gọn/mở rộng
+function snInsertToggle() {
+  const ed = document.getElementById('scheduleNoteEditor');
+  ed.focus();
+  if (_snSavedRange) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(_snSavedRange);
+  }
+  const sel = window.getSelection();
+  if (!sel.rangeCount || !ed.contains(sel.anchorNode)) return;
+  const range = sel.getRangeAt(0);
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'sn-toggle';
+  wrapper.innerHTML =
+    '<div class="sn-toggle-head">' +
+      '<span class="sn-toggle-arrow">▾</span>' +
+      '<span class="sn-toggle-label" contenteditable="true">Toggle</span>' +
+    '</div>' +
+    '<div class="sn-toggle-body"></div>';
+  const body = wrapper.querySelector('.sn-toggle-body');
+
+  if (range.collapsed) {
+    body.innerHTML = '<div><br></div>';
+  } else {
+    body.appendChild(range.extractContents());
+  }
+  range.insertNode(wrapper);
+  saveScheduleNote();
+}
+function snToggleFold(wrapper) {
+  wrapper.classList.toggle('collapsed');
+  wrapper.querySelector('.sn-toggle-arrow').textContent = wrapper.classList.contains('collapsed') ? '▸' : '▾';
+  saveScheduleNote();
+}
+
 function saveGanttMarks(m) { localStorage.setItem('_gantt_marks_', JSON.stringify(m)); scheduleCloudPush(); }
 
 function editGanttMark(y, m, d, proj) {
@@ -2815,6 +2870,11 @@ function esc(s) {
   renderCal();
   renderNote();
   document.getElementById('scheduleNoteEditor').innerHTML = loadScheduleNote();
+  // Click mũi tên toggle để thu gọn/mở rộng — dùng delegation vì nội dung được load lại qua innerHTML
+  document.getElementById('scheduleNoteEditor').addEventListener('click', e => {
+    const arrow = e.target.closest('.sn-toggle-arrow');
+    if (arrow) snToggleFold(arrow.closest('.sn-toggle'));
+  });
 
   // Tự động pull dữ liệu mới nhất từ cloud (không cần click gì)
   const cloudLoaded = await cloudPull();
