@@ -299,14 +299,17 @@ body {
   background: transparent;
   border: none;
   border-radius: 14px;
-  padding: 3px 7px;
-  font-size: .82rem;
+  padding: 4px 6px;
   cursor: pointer;
   font-family: inherit;
   transition: background .12s;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 .export-btn:hover { background: rgba(0,0,0,.06); }
+.export-btn svg { width: 16px; height: 16px; stroke: #8E8E93; }
+.export-btn:hover svg { stroke: #3C3C43; }
 .sync-status-inline {
   font-size: .68rem; color: #8E8E93; letter-spacing: -.1px; white-space: nowrap;
 }
@@ -1011,7 +1014,12 @@ input[type=checkbox]:checked::after {
           style="font-size:.68rem;color:#8e8e93;white-space:nowrap;cursor:pointer;padding:2px 7px;border-radius:10px;transition:background .12s"
           onmouseover="this.style.background='rgba(0,0,0,.05)'"
           onmouseout="this.style.background=''">☁️</span>
-        <button class="export-btn" onclick="exportImage()" title="Xuất ảnh 4K">📷</button>
+        <button class="export-btn" onclick="exportImage()" title="Xuất ảnh 4K">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 8h2.5l1.3-2h8.4l1.3 2H20a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+            <circle cx="12" cy="14" r="3.4"/>
+          </svg>
+        </button>
         <button class="move-btn" onclick="openMoveModal()">Copy / Move</button>
       </div>
     </div>
@@ -3053,7 +3061,46 @@ async function exportImage() {
   const target = document.body;
   const scale = Math.min(4, Math.max(1, 3840 / target.scrollWidth)); // hướng tới chiều rộng ~4K (3840px)
   try {
-    const canvas = await html2canvas(target, { scale, backgroundColor: '#ffffff', useCORS: true });
+    const canvas = await html2canvas(target, {
+      scale, backgroundColor: '#ffffff', useCORS: true,
+      onclone: (clonedDoc) => {
+        // html2canvas không vẽ đúng checkbox tuỳ biến (appearance:none + ::after) → thay bằng span vẽ tay đúng màu/hình
+        const origCbs = [...document.querySelectorAll('input[type=checkbox]')];
+        clonedDoc.querySelectorAll('input[type=checkbox]').forEach((c, i) => {
+          const orig = origCbs[i];
+          if (!orig) return;
+          const cs = getComputedStyle(orig);
+          const size = orig.offsetWidth || 20;
+          const span = clonedDoc.createElement('span');
+          const bg = cs.backgroundColor;
+          const isChecked = orig.checked && bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
+          span.style.cssText = 'display:inline-block;box-sizing:border-box;width:' + size + 'px;height:' + size + 'px;' +
+            'border-radius:50%;position:relative;vertical-align:middle;' +
+            (isChecked
+              ? 'background:' + bg + ';border:none;'
+              : 'background:transparent;border:1.5px solid ' + (cs.borderColor || '#C7C7CC') + ';');
+          if (isChecked) {
+            const check = clonedDoc.createElement('span');
+            check.textContent = '✓';
+            check.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
+              'color:#fff;font-size:' + Math.round(size * 0.6) + 'px;line-height:1;font-weight:700;';
+            span.appendChild(check);
+          }
+          c.replaceWith(span);
+        });
+
+        // html2canvas vẽ placeholder bằng màu chữ thường (đậm/đen) thay vì màu ::placeholder thật → áp lại đúng màu
+        const origInputs = [...document.querySelectorAll('input[placeholder]')];
+        clonedDoc.querySelectorAll('input[placeholder]').forEach((c, i) => {
+          const orig = origInputs[i];
+          if (!orig || orig.value) return;
+          try {
+            const ph = getComputedStyle(orig, '::placeholder');
+            if (ph && ph.color) c.style.color = ph.color;
+          } catch (e) {}
+        });
+      }
+    });
     const d = new Date();
     const stamp = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
     const link = document.createElement('a');
