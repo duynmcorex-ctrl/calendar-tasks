@@ -1956,7 +1956,7 @@ function renderGantt() {
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = new Date(curY, curM-1, d).getDay();
     const isWE = dow===0||dow===6, isToday = key(curY,curM,d)===todayKey, isSel = isSameMonth&&d===selD;
-    html += `<th class="g-dow${isWE?' g-weekend':''}${isToday?' g-today':''}${isSel?' g-sel-col':''}">${DOW[dow]}</th>`;
+    html += `<th class="g-dow${isWE?' g-weekend':''}${isToday?' g-today':''}${isSel?' g-sel-col':''}" onclick="selectDay(${curY},${curM},${d})" style="cursor:pointer">${DOW[dow]}</th>`;
   }
   html += '</tr>';
 
@@ -1965,7 +1965,7 @@ function renderGantt() {
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = new Date(curY, curM-1, d).getDay();
     const isWE = dow===0||dow===6, isToday = key(curY,curM,d)===todayKey, isSel = isSameMonth&&d===selD;
-    html += `<th id="gcol-${d}" class="g-day${isWE?' g-weekend':''}${isToday?' g-today':''}${isSel?' g-sel-col':''}">${d}</th>`;
+    html += `<th id="gcol-${d}" class="g-day${isWE?' g-weekend':''}${isToday?' g-today':''}${isSel?' g-sel-col':''}" onclick="selectDay(${curY},${curM},${d})" style="cursor:pointer">${d}</th>`;
   }
   html += '</tr></thead><tbody>';
 
