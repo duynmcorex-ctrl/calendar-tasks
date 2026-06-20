@@ -739,7 +739,82 @@ input[type=checkbox]:checked::after {
   border-top: 0.5px solid rgba(60,60,67,0.15);
   padding: 8px 18px 6px;
   flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.gantt-scroll {
   overflow-x: auto;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+/* ── SCHEDULE NOTES (rich text) ── */
+.schedule-notes {
+  flex: 1 1 200px;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  border-left: 0.5px solid rgba(60,60,67,.1);
+  padding-left: 14px;
+  gap: 4px;
+}
+.sn-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.sn-toolbar button,
+.sn-toolbar select {
+  background: transparent;
+  border: none;
+  color: #c7c7cc;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.sn-toolbar button:hover,
+.sn-toolbar select:hover { background: #f2f2f7; color: #8e8e93; }
+.sn-toolbar select { padding: 2px 2px; }
+.sn-sep {
+  width: 0.5px;
+  height: 12px;
+  background: rgba(60,60,67,.12);
+  margin: 0 2px;
+}
+.sn-color {
+  position: relative;
+  font-size: 11px;
+  color: #c7c7cc;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.sn-color:hover { background: #f2f2f7; color: #8e8e93; }
+.sn-color input[type=color] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+}
+.sn-editor {
+  flex: 1;
+  min-height: 60px;
+  max-height: 150px;
+  overflow-y: auto;
+  font-size: 12.5px;
+  color: #1c1c1e;
+  line-height: 1.5;
+  outline: none;
+  padding: 2px 1px;
+}
+.sn-editor:empty:before {
+  content: attr(data-placeholder);
+  color: #c7c7cc;
 }
 .gantt-footer {
   font-size: 10px;
@@ -919,7 +994,41 @@ input[type=checkbox]:checked::after {
 
 <!-- GANTT / PROJECT SCHEDULE -->
 <div class="gantt-section">
-  <div id="ganttWrap"></div>
+  <div class="gantt-scroll"><div id="ganttWrap"></div></div>
+
+  <div class="schedule-notes">
+    <div class="sn-toolbar">
+      <select class="sn-size" onchange="snExec('fontSize', this.value)" title="Cỡ chữ">
+        <option value="1">10</option>
+        <option value="2">12</option>
+        <option value="3" selected>14</option>
+        <option value="4">16</option>
+        <option value="5">18</option>
+        <option value="6">24</option>
+      </select>
+      <span class="sn-sep"></span>
+      <button onclick="snExec('bold')" title="Đậm (Ctrl+B)"><b>B</b></button>
+      <button onclick="snExec('italic')" title="Nghiêng (Ctrl+I)"><i>I</i></button>
+      <button onclick="snExec('underline')" title="Gạch chân (Ctrl+U)"><u>U</u></button>
+      <button onclick="snExec('strikeThrough')" title="Gạch ngang"><s>S</s></button>
+      <span class="sn-sep"></span>
+      <label class="sn-color" title="Màu chữ">
+        A<input type="color" onchange="snExec('foreColor', this.value)" value="#1c1c1e">
+      </label>
+      <span class="sn-sep"></span>
+      <button onclick="snExec('justifyLeft')" title="Căn trái">⟸</button>
+      <button onclick="snExec('justifyCenter')" title="Căn giữa">≡</button>
+      <button onclick="snExec('justifyRight')" title="Căn phải">⟹</button>
+      <span class="sn-sep"></span>
+      <button onclick="snExec('insertOrderedList')" title="Đánh số">1.</button>
+      <button onclick="snExec('insertUnorderedList')" title="Bullet">•</button>
+      <span class="sn-sep"></span>
+      <button onclick="snExec('undo')" title="Hoàn tác (Ctrl+Z)">↶</button>
+      <button onclick="snExec('redo')" title="Làm lại (Ctrl+Y)">↷</button>
+    </div>
+    <div class="sn-editor" id="scheduleNoteEditor" contenteditable="true"
+         oninput="saveScheduleNote()" data-placeholder="Ghi chú…"></div>
+  </div>
 </div>
 
 <script>
@@ -1139,6 +1248,7 @@ async function pickSyncFolder() {
     const loaded = await loadFromFile();
     if (loaded) {
       renderTodos(); renderCal(); renderNote();
+      document.getElementById('scheduleNoteEditor').innerHTML = loadScheduleNote();
       setSyncStatus('📁 Loaded', '#34C759');
     } else {
       await saveToFile(); // file chưa tồn tại → tạo mới từ localStorage
@@ -1151,7 +1261,7 @@ async function pickSyncFolder() {
 async function saveToFile() {
   if (!_dirHandle) return;
   try {
-    const payload = { tasks: load(), notes: loadNotes(), ganttMarks: loadGanttMarks(), savedAt: new Date().toISOString() };
+    const payload = { tasks: load(), notes: loadNotes(), ganttMarks: loadGanttMarks(), scheduleNote: loadScheduleNote(), savedAt: new Date().toISOString() };
     const fh = await _dirHandle.getFileHandle(DATA_FILE, { create: true });
     const wr = await fh.createWritable();
     await wr.write(JSON.stringify(payload));
@@ -1194,6 +1304,7 @@ async function loadFromFile() {
       localStorage.setItem('_cal_', JSON.stringify(p.tasks));
       if (p.notes) localStorage.setItem('_cal_notes_', JSON.stringify(p.notes));
       if (p.ganttMarks) localStorage.setItem('_gantt_marks_', JSON.stringify(p.ganttMarks));
+      if (p.scheduleNote !== undefined) localStorage.setItem('_schedule_note_', p.scheduleNote);
       setSyncStatus('📁 Loaded', '#34C759');
       return true;
     } else if (localHasData) {
@@ -1249,6 +1360,7 @@ async function cloudPull() {
       localStorage.setItem('_cal_', JSON.stringify(p.tasks));
       if (p.notes)      localStorage.setItem('_cal_notes_',  JSON.stringify(p.notes));
       if (p.ganttMarks) localStorage.setItem('_gantt_marks_', JSON.stringify(p.ganttMarks));
+      if (p.scheduleNote !== undefined) localStorage.setItem('_schedule_note_', p.scheduleNote);
       const ts = p.savedAt ? new Date(p.savedAt).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) : '';
       setCloudStatus('☁️ Synced' + (ts ? ' ' + ts : ''), '#34C759');
       return true;
@@ -1268,6 +1380,7 @@ async function cloudPush() {
   try {
     const payload = {
       tasks: load(), notes: loadNotes(), ganttMarks: loadGanttMarks(),
+      scheduleNote: loadScheduleNote(),
       savedAt: new Date().toISOString()
     };
     const r = await fetch(`${JBIN_BASE}/${cfg.binId}`, {
@@ -1298,7 +1411,10 @@ function saveCloudSetup() {
   closeCloudModal();
 
   cloudPull().then(loaded => {
-    if (loaded) { renderTodos(); renderCal(); renderNote(); }
+    if (loaded) {
+      renderTodos(); renderCal(); renderNote();
+      document.getElementById('scheduleNoteEditor').innerHTML = loadScheduleNote();
+    }
     else        { cloudPush(); } // bin mới rỗng → đẩy data lên
   });
 }
@@ -1842,6 +1958,23 @@ function taskToProjectCode(text) {
 // Gantt cell marks (deadline, mốc nộp bài…)
 // Gantt marks lưu riêng trong _gantt_marks_ (không bị file sync đụng vào)
 function loadGanttMarks() { return JSON.parse(localStorage.getItem('_gantt_marks_') || '{}'); }
+
+// ══════════════════════════════════════════
+//  SCHEDULE NOTES (rich text, bên cạnh Gantt)
+// ══════════════════════════════════════════
+let _snSaveTimer = null;
+function loadScheduleNote() { return localStorage.getItem('_schedule_note_') || ''; }
+function saveScheduleNote() {
+  localStorage.setItem('_schedule_note_', document.getElementById('scheduleNoteEditor').innerHTML);
+  clearTimeout(_snSaveTimer);
+  _snSaveTimer = setTimeout(() => { scheduleFileSave(); scheduleCloudPush(); }, 500);
+}
+function snExec(cmd, val) {
+  const ed = document.getElementById('scheduleNoteEditor');
+  ed.focus();
+  document.execCommand(cmd, false, val);
+  saveScheduleNote();
+}
 function saveGanttMarks(m) { localStorage.setItem('_gantt_marks_', JSON.stringify(m)); scheduleCloudPush(); }
 
 function editGanttMark(y, m, d, proj) {
@@ -2651,10 +2784,14 @@ function esc(s) {
 
   renderCal();
   renderNote();
+  document.getElementById('scheduleNoteEditor').innerHTML = loadScheduleNote();
 
   // Tự động pull dữ liệu mới nhất từ cloud (không cần click gì)
   const cloudLoaded = await cloudPull();
-  if (cloudLoaded) { renderTodos(); renderCal(); renderNote(); }
+  if (cloudLoaded) {
+    renderTodos(); renderCal(); renderNote();
+    document.getElementById('scheduleNoteEditor').innerHTML = loadScheduleNote();
+  }
 
   // Keyboard shortcuts on main task input
   const taskInp = document.getElementById('taskInput');
@@ -2685,16 +2822,18 @@ function esc(s) {
   // Ctrl+A / Cmd+A → toggle mở/đóng tất cả sub-tasks
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-      // Chỉ undo khi không đang focus trong 1 input/textarea
+      // Chỉ undo khi không đang focus trong 1 input/textarea/contenteditable
       if (document.activeElement.tagName === 'INPUT' ||
-          document.activeElement.tagName === 'TEXTAREA') return;
+          document.activeElement.tagName === 'TEXTAREA' ||
+          document.activeElement.isContentEditable) return;
       e.preventDefault();
       undoLast();
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
-      // Chỉ khi không đang focus trong input/textarea
+      // Chỉ khi không đang focus trong input/textarea/contenteditable
       if (document.activeElement.tagName === 'INPUT' ||
-          document.activeElement.tagName === 'TEXTAREA') return;
+          document.activeElement.tagName === 'TEXTAREA' ||
+          document.activeElement.isContentEditable) return;
       e.preventDefault();
       const data = load();
       const k = key(selY, selM, selD);
@@ -2726,7 +2865,10 @@ function esc(s) {
     const btn = document.getElementById('connectBtn');
     if (btn && _dirHandle) btn.textContent = '📁 ' + _dirHandle.name;
     const loaded = await loadFromFile();
-    if (loaded) { renderTodos(); renderCal(); renderNote(); }
+    if (loaded) {
+      renderTodos(); renderCal(); renderNote();
+      document.getElementById('scheduleNoteEditor').innerHTML = loadScheduleNote();
+    }
     else setSyncStatus('📁 Ready', '#34C759');
   } else {
     setSyncStatus('📁 Not connected', '#8E8E93');
