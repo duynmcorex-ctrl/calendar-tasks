@@ -295,6 +295,18 @@ body {
   white-space: nowrap;
 }
 .move-btn:hover { background: rgba(0,122,255,0.16); }
+.export-btn {
+  background: transparent;
+  border: none;
+  border-radius: 14px;
+  padding: 3px 7px;
+  font-size: .82rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .12s;
+  line-height: 1;
+}
+.export-btn:hover { background: rgba(0,0,0,.06); }
 .sync-status-inline {
   font-size: .68rem; color: #8E8E93; letter-spacing: -.1px; white-space: nowrap;
 }
@@ -618,35 +630,14 @@ input[type=checkbox]:checked::after {
   border-color: rgba(0,0,0,.22);
 }
 
-/* ── DROP ZONES ── */
-.dz {
-  display: flex;
-  align-items: center;
-  height: 3px;
-  margin: 0;
-  cursor: default;
-  transition: height .1s, margin .1s;
+/* ── DRAG & DROP — chỉ báo vị trí thả trực tiếp trên dòng task ── */
+.todo-item.drop-before, .sub-item.drop-before { box-shadow: inset 0 2px 0 0 #007AFF; }
+.todo-item.drop-after,  .sub-item.drop-after  { box-shadow: inset 0 -2px 0 0 #007AFF; }
+.todo-item.drop-mid {
+  background: rgba(0,122,255,.09);
+  outline: 1.5px dashed rgba(0,122,255,.45);
+  outline-offset: -1.5px;
 }
-/* Không phình toàn bộ khi drag — giữ layout ổn định */
-#todoList.drag-active .dz-main     { height: 4px; }
-#todoList.drag-active .dz-sub      { height: 3px; }
-#todoList.drag-active .dz-sub-item { height: 3px; }
-/* Chỉ phình khi hover đúng vùng thả */
-.dz.over { height: 20px !important; margin: 1px 0; }
-.dz-line {
-  flex: 1;
-  height: 2px;
-  border-radius: 2px;
-  background: transparent;
-  transition: background .08s, height .08s;
-}
-#todoList.drag-active .dz-main     .dz-line { background: rgba(0,122,255,.10); }
-#todoList.drag-active .dz-sub      .dz-line { background: transparent; }
-#todoList.drag-active .dz-sub-item .dz-line { background: rgba(0,122,255,.10); }
-.dz.over .dz-line                { background: #007AFF !important; height: 3px; }
-.dz-sub.over .dz-line            { background: #007AFF !important; }
-.dz-sub-item.over .dz-line       { background: #007AFF !important; }
-.dz-sub { margin-left: 44px; }
 
 /* Empty state */
 .empty {
@@ -975,6 +966,7 @@ input[type=checkbox]:checked::after {
           style="font-size:.68rem;color:#8e8e93;white-space:nowrap;cursor:pointer;padding:2px 7px;border-radius:10px;transition:background .12s"
           onmouseover="this.style.background='rgba(0,0,0,.05)'"
           onmouseout="this.style.background=''">☁️</span>
+        <button class="export-btn" onclick="exportImage()" title="Xuất ảnh 4K">📷</button>
         <button class="move-btn" onclick="openMoveModal()">Copy / Move</button>
       </div>
     </div>
@@ -1926,19 +1918,6 @@ function saveEditSub(k, taskId, subId, newText) {
   renderTodos();
 }
 
-// ── Helpers: create drop zone dividers ──
-function makeDZ(cls, onDrop) {
-  const dz = document.createElement('div');
-  dz.className = 'dz ' + cls;
-  const line = document.createElement('div');
-  line.className = 'dz-line';
-  dz.appendChild(line);
-  dz.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('over'); });
-  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
-  dz.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('over'); onDrop(); });
-  return dz;
-}
-
 function finishDrag() {
   dragSrc = null;
   document.getElementById('todoList').classList.remove('drag-active');
@@ -2340,10 +2319,6 @@ function renderTodos() {
       el.appendChild(sep);
     }
 
-    // Drop zone trước task đầu tiên
-    const firstFlatIdx = boardItems.length ? boardItems[0].i : tasks.length;
-    el.appendChild(makeDZ('dz-main', () => dropAsMain(firstFlatIdx)));
-
   boardItems.forEach(({t, i: idx}, boardIdx) => {
     const wrapper = document.createElement('div');
     wrapper.className = 'task-wrapper' + (isWork ? ' tw-work' : '');
@@ -2421,18 +2396,25 @@ function renderTodos() {
       el.classList.remove('drag-active');
       dragSrc = null;
     });
-    // Allow dropping ONTO a main task item → insert after it (same as dz-main below it)
+    // Thả lên dòng task chính: nửa trên = chèn trước, nửa dưới = chèn sau, giữa = biến thành sub-task của task này
     div.addEventListener('dragover', e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      div.classList.add('drag-over');
+      const r = div.getBoundingClientRect();
+      const ratio = (e.clientY - r.top) / r.height;
+      div.classList.remove('drop-before', 'drop-mid', 'drop-after');
+      div.classList.add(ratio < 0.3 ? 'drop-before' : ratio > 0.7 ? 'drop-after' : 'drop-mid');
     });
-    div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+    div.addEventListener('dragleave', () => div.classList.remove('drop-before', 'drop-mid', 'drop-after'));
     div.addEventListener('drop', e => {
       e.preventDefault(); e.stopPropagation();
-      div.classList.remove('drag-over');
+      const r = div.getBoundingClientRect();
+      const ratio = (e.clientY - r.top) / r.height;
+      div.classList.remove('drop-before', 'drop-mid', 'drop-after');
       if (!dragSrc) return;
-      dropAsMain(idx + 1); // insert after this task
+      if (ratio < 0.3)      dropAsMain(idx);       // chèn trước task này
+      else if (ratio > 0.7) dropAsMain(idx + 1);    // chèn sau task này
+      else                  dropAsSubAt(t.id, -1);  // thả vào giữa → thành sub-task của task này
     });
 
     wrapper.appendChild(div);
@@ -2442,9 +2424,6 @@ function renderTodos() {
       const subs = t.subtasks || [];
       const subCont = document.createElement('div');
       subCont.className = 'sub-tasks';
-
-      // Drop zone BEFORE first sub-task
-      subCont.appendChild(makeDZ('dz-sub-item', () => dropAsSubAt(t.id, 0)));
 
       subs.forEach((sub, si) => {
         const sd = document.createElement('div');
@@ -2490,18 +2469,23 @@ function renderTodos() {
           el.classList.remove('drag-active');
           dragSrc = null;
         });
-        // Drop ON a sub-item → insert after it (same as dz-sub-item below it)
+        // Thả lên sub-item: nửa trên = chèn trước, nửa dưới = chèn sau (cùng làm sub-task của parent này)
         sd.addEventListener('dragover', e => {
           e.preventDefault(); e.stopPropagation();
           e.dataTransfer.dropEffect = 'move';
-          sd.classList.add('drag-over');
+          const r = sd.getBoundingClientRect();
+          const ratio = (e.clientY - r.top) / r.height;
+          sd.classList.remove('drop-before', 'drop-after');
+          sd.classList.add(ratio < 0.5 ? 'drop-before' : 'drop-after');
         });
-        sd.addEventListener('dragleave', () => sd.classList.remove('drag-over'));
+        sd.addEventListener('dragleave', () => sd.classList.remove('drop-before', 'drop-after'));
         sd.addEventListener('drop', e => {
           e.preventDefault(); e.stopPropagation();
-          sd.classList.remove('drag-over');
+          const r = sd.getBoundingClientRect();
+          const ratio = (e.clientY - r.top) / r.height;
+          sd.classList.remove('drop-before', 'drop-after');
           if (!dragSrc) return;
-          dropAsSubAt(t.id, si + 1); // insert after this sub-task
+          dropAsSubAt(t.id, ratio < 0.5 ? si : si + 1);
         });
 
         // Keyboard navigation on focused sub-item
@@ -2541,9 +2525,6 @@ function renderTodos() {
         });
 
         subCont.appendChild(sd);
-
-        // Drop zone AFTER each sub-task
-        subCont.appendChild(makeDZ('dz-sub-item', () => dropAsSubAt(t.id, si + 1)));
       });
 
       const addRow = document.createElement('div'); addRow.className = 'add-sub-row';
@@ -2634,13 +2615,7 @@ function renderTodos() {
       }
     });
 
-    // Drop zone: convert to sub-task of THIS task (append to end)
-    wrapper.appendChild(makeDZ('dz-sub', () => dropAsSubAt(t.id, -1)));
-
     el.appendChild(wrapper);
-
-    // Drop zone AFTER this task (= before next task)
-    el.appendChild(makeDZ('dz-main', () => dropAsMain(idx + 1)));
   }); // end boardItems.forEach
 
   // Add-task input riêng cho mỗi bảng
@@ -2915,5 +2890,28 @@ function esc(s) {
     </div>
   </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+async function exportImage() {
+  if (typeof html2canvas === 'undefined') {
+    alert('Thư viện xuất ảnh chưa tải xong, vui lòng thử lại sau vài giây.');
+    return;
+  }
+  const target = document.body;
+  const scale = Math.min(4, Math.max(1, 3840 / target.scrollWidth)); // hướng tới chiều rộng ~4K (3840px)
+  try {
+    const canvas = await html2canvas(target, { scale, backgroundColor: '#ffffff', useCORS: true });
+    const d = new Date();
+    const stamp = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const link = document.createElement('a');
+    link.download = `calendar-tasks-${stamp}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) {
+    alert('Xuất ảnh lỗi: ' + e.message);
+  }
+}
+</script>
 </body>
 </html>
