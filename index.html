@@ -746,8 +746,8 @@ input[type=checkbox]:checked::after {
 .gantt-scroll {
   overflow-x: auto;
   overflow-y: auto;
-  height: 340px;
   max-width: 100%;
+  /* Mặc định cao tự nhiên theo số dự án (không giới hạn) — chỉ giới hạn khi người dùng tự kéo thanh resize bên dưới */
 }
 .gantt-resize-handle {
   height: 8px;
@@ -1687,7 +1687,17 @@ function renderNote() {
 // ══════════════════════════════════════════
 //  TODOS
 // ══════════════════════════════════════════
+// Chặn việc 1 task bị thêm 2 lần khi Enter bị trình duyệt gửi lặp (hay gặp trên macOS dù không gõ IME)
+let _lastAddAt = 0;
+function _blockDupAdd() {
+  const now = Date.now();
+  if (now - _lastAddAt < 120) return true;
+  _lastAddAt = now;
+  return false;
+}
+
 function addTask() {
+  if (_blockDupAdd()) return;
   const inp = document.getElementById('taskInput');
   const text = inp.value.trim();
   if (!text) return;
@@ -1715,6 +1725,7 @@ function addTask() {
 
 // Thêm task vào bảng Personal (hỗ trợ insertAfterIdx)
 function addPersonalTask() {
+  if (_blockDupAdd()) return;
   const inp = document.getElementById('personalTaskInput');
   if (!inp) return;
   const text = inp.value.trim();
@@ -1740,6 +1751,7 @@ function addPersonalTask() {
 
 // Shift+Enter: thêm personal task + mở sub-task input
 function addPersonalTaskAndExpand() {
+  if (_blockDupAdd()) return;
   const inp = document.getElementById('personalTaskInput');
   if (!inp) return;
   const text = inp.value.trim();
@@ -1767,6 +1779,7 @@ function switchTaskBoard(k, id) {
 
 // Shift+Enter: thêm task chính + mở thẳng sub-task input
 function addTaskAndExpand() {
+  if (_blockDupAdd()) return;
   const inp = document.getElementById('taskInput');
   const text = inp.value.trim();
   if (!text) return;
@@ -1938,6 +1951,7 @@ function toggleExpand(id) {
 }
 
 function addSubTask(k, taskId) {
+  if (_blockDupAdd()) return;
   const inp = document.getElementById('subInp_' + taskId);
   if (!inp) return;
   const text = inp.value.trim();
@@ -2355,7 +2369,7 @@ function setGanttSort(mode) {
 }
 
 function ganttDS(e, y, m, d, proj) {
-  ganttDrag = { y, m, d, proj, copy: e.ctrlKey || e.altKey };
+  ganttDrag = { y, m, d, proj, copy: e.ctrlKey || e.altKey || e.metaKey };
   e.dataTransfer.effectAllowed = ganttDrag.copy ? 'copy' : 'move';
   e.stopPropagation();
 }
@@ -2743,11 +2757,11 @@ function renderTodos() {
       subInp.id = 'subInp_' + t.id; subInp.placeholder = 'Add sub-task...';
       subInp.onkeydown = e => {
         if (e.isComposing || e.keyCode === 229) return; // tránh Enter bị xử lý 2 lần khi đang gõ IME (hay gặp trên Mac)
-        if (e.key === 'Enter' && !e.ctrlKey) {
+        if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
           addSubTask(k, t.id);  // Enter: thêm sub-task, ở lại sub input
-        } else if (e.key === 'Enter' && e.ctrlKey) {
+        } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
-          // Ctrl+Enter: trở về parent task div (không collapse sub-tasks)
+          // Ctrl/Cmd+Enter: trở về parent task div (không collapse sub-tasks)
           div.focus();
         } else if (e.key === 'Escape') {
           expandedTasks.delete(t.id); renderTodos();
@@ -2803,13 +2817,13 @@ function renderTodos() {
         else if (i < items.length - 1) items[i + 1].focus();
         else document.getElementById(isWork ? 'taskInput' : 'personalTaskInput')?.focus();
         deleteTask(k, t.id);
-      } else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+      } else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         // Enter → focus add input của bảng tương ứng
         e.preventDefault();
         insertAfterIdx = null;
         document.getElementById(isWork ? 'taskInput' : 'personalTaskInput')?.focus();
-      } else if (e.key === 'Enter' && e.ctrlKey && !e.shiftKey) {
-        // Ctrl+Enter → chèn NGAY SAU task hiện tại (cùng bảng)
+      } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        // Ctrl/Cmd+Enter → chèn NGAY SAU task hiện tại (cùng bảng)
         e.preventDefault();
         insertAfterIdx = idx;
         const addInpId = isWork ? 'taskInput' : 'personalTaskInput';
@@ -3006,6 +3020,13 @@ function esc(s) {
 
 (async function init() {
   autoExpandAll(selY, selM, selD); // mở rộng toàn bộ sub-tasks ngày đang chọn khi khởi động
+
+  // Trên Mac, phím tương đương Ctrl là Cmd — đổi nhãn tooltip cho đúng (chức năng vẫn nhận cả 2 phím)
+  if (/Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+    document.querySelectorAll('[title*="Ctrl+"]').forEach(el => {
+      el.title = el.title.replace(/Ctrl\+/g, 'Cmd+');
+    });
+  }
 
   renderCal();
   renderNote();
