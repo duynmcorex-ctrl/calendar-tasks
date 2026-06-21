@@ -739,6 +739,8 @@ input[type=checkbox]:checked::after {
 }
 .gantt-scroll {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 340px;
   flex-shrink: 0;
   max-width: 100%;
 }
@@ -936,7 +938,12 @@ input[type=checkbox]:checked::after {
 }
 .gantt-table thead th {
   border-right: 0.5px dashed rgba(60,60,67,0.1);
+  position: sticky;
+  background: #fff;
+  z-index: 2;
 }
+.gantt-table thead tr:first-child th { top: 0; }
+.gantt-table thead tr:last-child th  { top: 17px; }
 .gantt-table .g-cell:hover { filter: brightness(0.9); }
 .gantt-table .g-cell[draggable="true"] { cursor: grab; }
 .gantt-table .g-cell[draggable="true"]:active { cursor: grabbing; }
@@ -2096,6 +2103,33 @@ function snToggleFold(wrapper) {
   saveScheduleNote();
 }
 
+// Enter ngay trên dòng tiêu đề Toggle → tự tạo Toggle kế tiếp (giống outline Notion), không cần bấm lại nút
+function snToggleEnterContinue(e) {
+  if (e.key !== 'Enter' || e.shiftKey) return;
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const node = sel.anchorNode;
+  const label = (node.nodeType === 1 ? node : node.parentElement)?.closest('.sn-toggle-label');
+  if (!label) return;
+  e.preventDefault();
+  const wrapper = label.closest('.sn-toggle');
+  const newWrapper = document.createElement('div');
+  newWrapper.className = 'sn-toggle';
+  newWrapper.innerHTML =
+    '<div class="sn-toggle-head">' +
+      '<span class="sn-toggle-arrow">▾</span>' +
+      '<span class="sn-toggle-label" contenteditable="true">Toggle</span>' +
+    '</div>' +
+    '<div class="sn-toggle-body"><div><br></div></div>';
+  wrapper.parentNode.insertBefore(newWrapper, wrapper.nextSibling);
+  const newLabel = newWrapper.querySelector('.sn-toggle-label');
+  const range = document.createRange();
+  range.selectNodeContents(newLabel); // chọn sẵn chữ "Toggle" để gõ đè ngay (vd gõ "2")
+  sel.removeAllRanges();
+  sel.addRange(range);
+  saveScheduleNote();
+}
+
 function saveGanttMarks(m) { localStorage.setItem('_gantt_marks_', JSON.stringify(m)); scheduleCloudPush(); }
 
 function editGanttMark(y, m, d, proj) {
@@ -2684,6 +2718,7 @@ function renderTodos() {
       const subInp = document.createElement('input');
       subInp.id = 'subInp_' + t.id; subInp.placeholder = 'Add sub-task...';
       subInp.onkeydown = e => {
+        if (e.isComposing || e.keyCode === 229) return; // tránh Enter bị xử lý 2 lần khi đang gõ IME (hay gặp trên Mac)
         if (e.key === 'Enter' && !e.ctrlKey) {
           addSubTask(k, t.id);  // Enter: thêm sub-task, ở lại sub input
         } else if (e.key === 'Enter' && e.ctrlKey) {
@@ -2780,6 +2815,7 @@ function renderTodos() {
     inp.id = 'personalTaskInput';
     inp.placeholder = 'Add personal task…  [Enter] add  [Shift+Enter] add + sub-tasks';
     inp.addEventListener('keydown', e => {
+      if (e.isComposing || e.keyCode === 229) return; // tránh Enter bị xử lý 2 lần khi đang gõ IME (hay gặp trên Mac)
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault(); addPersonalTask();
       } else if (e.key === 'Enter' && e.shiftKey) {
@@ -2919,6 +2955,7 @@ function esc(s) {
     const arrow = e.target.closest('.sn-toggle-arrow');
     if (arrow) snToggleFold(arrow.closest('.sn-toggle'));
   });
+  document.getElementById('scheduleNoteEditor').addEventListener('keydown', snToggleEnterContinue);
   window.addEventListener('resize', syncNotesPanelHeight);
 
   // Tự động pull dữ liệu mới nhất từ cloud (không cần click gì)
@@ -2932,6 +2969,7 @@ function esc(s) {
   const taskInp = document.getElementById('taskInput');
   const DEFAULT_PLACEHOLDER = taskInp.placeholder;
   taskInp.addEventListener('keydown', e => {
+    if (e.isComposing || e.keyCode === 229) return; // tránh Enter bị xử lý 2 lần khi đang gõ IME (hay gặp trên Mac)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       addTask(); // addTask() sẽ reset insertAfterIdx + placeholder
