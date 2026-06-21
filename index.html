@@ -1067,7 +1067,7 @@ input[type=checkbox]:checked::after {
 <div class="gantt-section">
   <div class="gantt-col">
     <div class="gantt-scroll" id="ganttScroll"><div id="ganttWrap"></div></div>
-    <div class="gantt-resize-handle" id="ganttResizeHandle" title="Kéo để mở rộng/thu nhỏ schedule"></div>
+    <div class="gantt-resize-handle" id="ganttResizeHandle" title="Kéo để mở rộng/thu nhỏ — double-click để trả về tự co giãn"></div>
   </div>
 
   <div class="schedule-notes">
@@ -2988,8 +2988,9 @@ function esc(s) {
   const scrollBox = document.getElementById('ganttScroll');
   if (!handle || !scrollBox) return;
 
-  const saved = parseInt(localStorage.getItem('_gantt_height_'), 10);
-  if (saved) scrollBox.style.height = saved + 'px';
+  // Không khôi phục chiều cao đã lưu khi mở lại app — mặc định luôn tự co giãn theo số dự án.
+  // Kéo thanh này chỉ là điều chỉnh tạm trong phiên làm việc hiện tại (vd để xem note dài hơn).
+  localStorage.removeItem('_gantt_height_'); // dọn giá trị cũ từ các bản trước, tránh áp lại chiều cao cố định
 
   let dragging = false, startY = 0, startH = 0;
   handle.addEventListener('mousedown', e => {
@@ -3014,7 +3015,11 @@ function esc(s) {
     handle.classList.remove('active');
     document.body.style.cursor     = '';
     document.body.style.userSelect = '';
-    localStorage.setItem('_gantt_height_', parseInt(scrollBox.style.height, 10));
+  });
+  // Double-click thanh kéo → trả về tự co giãn theo nội dung (bỏ chiều cao cố định đang đặt)
+  handle.addEventListener('dblclick', () => {
+    scrollBox.style.height = '';
+    syncNotesPanelHeight();
   });
 })();
 
