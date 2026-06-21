@@ -737,13 +737,36 @@ input[type=checkbox]:checked::after {
   align-items: flex-start;
   gap: 16px;
 }
-.gantt-scroll {
-  overflow-x: auto;
-  overflow-y: auto;
-  max-height: 340px;
+.gantt-col {
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
   max-width: 100%;
 }
+.gantt-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  height: 340px;
+  max-width: 100%;
+}
+.gantt-resize-handle {
+  height: 8px;
+  flex-shrink: 0;
+  cursor: row-resize;
+  position: relative;
+}
+.gantt-resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px; height: 3px;
+  border-radius: 3px;
+  background: rgba(60,60,67,.15);
+  transition: background .12s, width .12s;
+}
+.gantt-resize-handle:hover::after,
+.gantt-resize-handle.active::after { background: #007AFF; width: 56px; }
 /* ── SCHEDULE NOTES (rich text) ── */
 .schedule-notes {
   flex: 1 1 200px;
@@ -850,8 +873,9 @@ input[type=checkbox]:checked::after {
   flex-shrink: 0;
   transition: transform .1s;
 }
-.sn-toggle-label { font-weight: 600; outline: none; }
+.sn-toggle-label { font-size: 12.5px; font-weight: 600; outline: none; }
 .sn-toggle-body {
+  font-size: 12.5px;
   margin-left: 13px;
   padding-left: 8px;
   border-left: 1.5px solid rgba(60,60,67,.12);
@@ -938,12 +962,7 @@ input[type=checkbox]:checked::after {
 }
 .gantt-table thead th {
   border-right: 0.5px dashed rgba(60,60,67,0.1);
-  position: sticky;
-  background: #fff;
-  z-index: 2;
 }
-.gantt-table thead tr:first-child th { top: 0; }
-.gantt-table thead tr:last-child th  { top: 17px; }
 .gantt-table .g-cell:hover { filter: brightness(0.9); }
 .gantt-table .g-cell[draggable="true"] { cursor: grab; }
 .gantt-table .g-cell[draggable="true"]:active { cursor: grabbing; }
@@ -1046,7 +1065,10 @@ input[type=checkbox]:checked::after {
 
 <!-- GANTT / PROJECT SCHEDULE -->
 <div class="gantt-section">
-  <div class="gantt-scroll"><div id="ganttWrap"></div></div>
+  <div class="gantt-col">
+    <div class="gantt-scroll" id="ganttScroll"><div id="ganttWrap"></div></div>
+    <div class="gantt-resize-handle" id="ganttResizeHandle" title="Kéo để mở rộng/thu nhỏ schedule"></div>
+  </div>
 
   <div class="schedule-notes">
     <div class="sn-toolbar">
@@ -2093,6 +2115,8 @@ function snInsertToggle() {
     body.innerHTML = '<div><br></div>';
   } else {
     body.appendChild(range.extractContents());
+    // Bỏ cỡ chữ tuỳ biến cũ trên đoạn được kéo vào, để tiêu đề và nội dung trong toggle đồng nhất cỡ chữ
+    body.querySelectorAll('[style*="font-size"]').forEach(el => { el.style.fontSize = ''; });
   }
   range.insertNode(wrapper);
   saveScheduleNote();
@@ -2311,7 +2335,7 @@ function renderGantt() {
 // Giữ khung ghi chú đúng bằng chiều cao bảng Gantt — không để hở khoảng trống,
 // không để nội dung note dài đẩy phình cả layout (note tự cuộn riêng trong khung này)
 function syncNotesPanelHeight() {
-  const ganttBox = document.querySelector('.gantt-scroll');
+  const ganttBox = document.querySelector('.gantt-col');
   const notesBox = document.querySelector('.schedule-notes');
   if (!ganttBox || !notesBox) return;
   notesBox.style.height = ganttBox.offsetHeight + 'px';
@@ -2941,6 +2965,42 @@ function esc(s) {
     handle.classList.remove('active');
     document.body.style.cursor     = '';
     document.body.style.userSelect = '';
+  });
+})();
+
+// ── RESIZE chiều cao schedule (Gantt) ──
+(function initGanttResize() {
+  const handle    = document.getElementById('ganttResizeHandle');
+  const scrollBox = document.getElementById('ganttScroll');
+  if (!handle || !scrollBox) return;
+
+  const saved = parseInt(localStorage.getItem('_gantt_height_'), 10);
+  if (saved) scrollBox.style.height = saved + 'px';
+
+  let dragging = false, startY = 0, startH = 0;
+  handle.addEventListener('mousedown', e => {
+    dragging = true;
+    startY   = e.clientY;
+    startH   = scrollBox.getBoundingClientRect().height;
+    handle.classList.add('active');
+    document.body.style.cursor    = 'row-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const delta = e.clientY - startY;
+    const newH  = Math.max(120, Math.min(800, startH + delta));
+    scrollBox.style.height = newH + 'px';
+    syncNotesPanelHeight();
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('active');
+    document.body.style.cursor     = '';
+    document.body.style.userSelect = '';
+    localStorage.setItem('_gantt_height_', parseInt(scrollBox.style.height, 10));
   });
 })();
 
