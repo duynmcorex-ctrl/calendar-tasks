@@ -2343,7 +2343,20 @@ function renderGantt() {
     if (el) el.focus();
   }
 
+  shrinkGanttBoxIfOversized();
   syncNotesPanelHeight();
+}
+
+// Nếu đã từng kéo tay cho khung Gantt cao hơn, nhưng sau đó xóa dự án khiến nội dung ngắn lại
+// hơn chiều cao đang đặt → tự thu nhỏ về đúng nội dung (không cần kéo tay lại).
+// Không tự phình to — để không phá tác dụng kéo tay khi cần thêm khoảng cho note dài.
+function shrinkGanttBoxIfOversized() {
+  const scrollBox = document.getElementById('ganttScroll');
+  const wrap = document.getElementById('ganttWrap');
+  if (!scrollBox || !wrap || !scrollBox.style.height) return; // chưa kéo tay → đang auto, không cần xử lý
+  const cur = parseInt(scrollBox.style.height, 10);
+  const contentH = wrap.scrollHeight;
+  if (contentH < cur) scrollBox.style.height = contentH + 'px';
 }
 
 // Giữ khung ghi chú đúng bằng chiều cao bảng Gantt — không để hở khoảng trống,
