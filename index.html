@@ -890,6 +890,7 @@ input[type=checkbox]:checked::after {
 }
 /* Cột ngày đang chọn — chỉ tô nền ô trống, không che màu dự án */
 .g-sel-col { background: rgba(0,122,255,0.11); }
+.g-cell.g-we-cell { background: #F2F2F7; }
 .gantt-table {
   border-collapse: collapse;
   font-size: 10px;
@@ -1064,6 +1065,9 @@ body.dark .gantt-table .g-day { color: #d1d1d6; }
 body.dark .gantt-table .g-num { color: #aeaeb2; }
 body.dark .gantt-table .g-cell { border-right-color: rgba(255,255,255,.08); border-bottom-color: rgba(255,255,255,.07); }
 body.dark .gantt-table thead th { border-right-color: rgba(255,255,255,.08); }
+/* Cột ngày nghỉ: phủ mờ trong suốt kiểu Apple, không dùng màu đặc chói mắt như light mode */
+body.dark .g-cell.g-we-cell { background: rgba(255,255,255,.045); }
+body.dark .g-weekend, body.dark .g-weekend .g-dow { color: #FF6961; }
 body.dark .sn-toolbar button:hover,
 body.dark .sn-toolbar select:hover,
 body.dark .sn-color-trigger:hover { background: rgba(255,255,255,.08); }
@@ -2409,10 +2413,9 @@ function renderGantt() {
       } else {
         const dow   = new Date(curY,curM-1,d).getDay();
         const isWE  = dow===0||dow===6;
-        const bg    = isWE ? '#F2F2F7' : '';
-        const cls   = `g-cell${isSel&&!isWE?' g-sel-col':''}`;
+        const cls   = `g-cell${isWE?' g-we-cell':''}${isSel&&!isWE?' g-sel-col':''}`;
         const aStyle= isAnchor ? 'outline:2px dashed #FF9500;outline-offset:-2px;' : '';
-        html += `<td class="${cls}" style="${bg?'background:'+bg+';':''}${aStyle}" ${doDrop} ${doClick}></td>`;
+        html += `<td class="${cls}" style="${aStyle}" ${doDrop} ${doClick}></td>`;
       }
     }
     html += '</tr>';
