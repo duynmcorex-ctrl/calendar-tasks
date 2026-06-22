@@ -1002,6 +1002,75 @@ input[type=checkbox]:checked::after {
 }
 .board-switch-btn:hover { color: #007AFF; border-color: #007AFF; }
 .todo-item.board-personal { border-left: 2px solid rgba(52,199,89,.45); }
+
+/* ── DARK MODE ── */
+.dark-toggle-btn {
+  background: transparent;
+  border: none;
+  border-radius: 14px;
+  padding: 4px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .12s;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  font-size: .85rem;
+}
+.dark-toggle-btn:hover { background: rgba(0,0,0,.06); }
+body.dark { background: #1c1c1e; }
+body.dark .header { background: rgba(28,28,30,.92); border-bottom-color: rgba(255,255,255,.12); }
+body.dark .header h1 { color: #f2f2f7; }
+body.dark .dark-toggle-btn:hover { background: rgba(255,255,255,.08); }
+body.dark .cal-side { background: #2c2c2e; border-right-color: rgba(255,255,255,.1); }
+body.dark .cal-nav .month-label { color: #f2f2f7; }
+body.dark .day:hover { background: rgba(255,255,255,.06); }
+body.dark .day .num { color: #f2f2f7; }
+body.dark .day .cal-note-txt { color: #f2f2f7; }
+body.dark .day.has-partial { background: rgba(255,255,255,.06); }
+body.dark .note-side { background: #1c1c1e; }
+body.dark .note-header .date-big { color: #f2f2f7; }
+body.dark .sync-status-inline { color: #aeaeb2; }
+body.dark .cal-note-row input { background: #2c2c2e; color: #f2f2f7; box-shadow: none; }
+body.dark .cal-note-row input::placeholder { color: #8e8e93; }
+body.dark .add-row input { background: #2c2c2e; color: #f2f2f7; box-shadow: none; }
+body.dark .add-row input::placeholder { color: #8e8e93; }
+body.dark .todo-list { background: #2c2c2e; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+body.dark .todo-item::after { background: rgba(255,255,255,.08); }
+body.dark .todo-item:hover { background: rgba(255,255,255,.04); }
+body.dark .todo-item .txt { color: #f2f2f7; }
+body.dark .todo-item .edit-input,
+body.dark .sub-item .edit-input { color: #f2f2f7; background: rgba(255,255,255,.08); }
+body.dark .sub-item:hover { background: rgba(255,255,255,.06); }
+body.dark .sub-item .txt { color: #e5e5ea; }
+body.dark .sub-tasks { border-left-color: rgba(255,255,255,.15); }
+body.dark .add-sub-row input { color: #e5e5ea; }
+body.dark .add-sub-row input:focus { background: rgba(255,255,255,.06); }
+body.dark .add-sub-row button:hover { background: rgba(255,255,255,.08); color: #e5e5ea; }
+body.dark .board-add-row input { background: #3a3a3c; color: #f2f2f7; }
+body.dark .board-switch-btn { border-color: rgba(255,255,255,.2); }
+body.dark .modal-box { background: #2c2c2e; }
+body.dark .modal-title { color: #f2f2f7; }
+body.dark .modal-box input[type=date],
+body.dark .modal-box input[type=text] { background: #3a3a3c; color: #f2f2f7; border-color: rgba(255,255,255,.15); }
+body.dark .modal-box .field-label { color: #d1d1d6; }
+body.dark .modal-box .cloud-steps { background: #1c1c1e; color: #aeaeb2; }
+body.dark .modal-box .cloud-steps b { color: #f2f2f7; }
+body.dark .btn-cancel { background: #3a3a3c; color: #f2f2f7; }
+body.dark .btn-cancel:hover { background: #48484a; }
+body.dark .gantt-section { background: #1c1c1e; border-top-color: rgba(255,255,255,.12); }
+body.dark .gantt-table .g-proj { color: #f2f2f7; }
+body.dark .gantt-table .g-day { color: #d1d1d6; }
+body.dark .gantt-table .g-num { color: #aeaeb2; }
+body.dark .gantt-table .g-cell { border-right-color: rgba(255,255,255,.08); border-bottom-color: rgba(255,255,255,.07); }
+body.dark .gantt-table thead th { border-right-color: rgba(255,255,255,.08); }
+body.dark .sn-toolbar button:hover,
+body.dark .sn-toolbar select:hover,
+body.dark .sn-color-trigger:hover { background: rgba(255,255,255,.08); }
+body.dark .sn-swatches { background: #2c2c2e; }
+body.dark .sn-editor { color: #f2f2f7; }
+body.dark .sn-toggle-body { border-left-color: rgba(255,255,255,.15); }
+body.dark .gantt-resize-handle::after { background: rgba(255,255,255,.15); }
 </style>
 </head>
 <body>
@@ -1046,12 +1115,13 @@ input[type=checkbox]:checked::after {
             <circle cx="12" cy="14" r="3.4"/>
           </svg>
         </button>
+        <button class="dark-toggle-btn" id="darkToggleBtn" onclick="toggleDarkMode()" title="Bật/tắt Dark mode">🌙</button>
         <button class="move-btn" onclick="openMoveModal()">Copy / Move</button>
       </div>
     </div>
 
     <div class="cal-note-row">
-      <input id="calNoteInput" placeholder="📌 Calendar note — birthday, reminder..." oninput="saveCalNote()">
+      <input id="calNoteInput" placeholder="📌 Calendar note — birthday, reminder..." onblur="saveCalNote()" onkeydown="if(event.key==='Enter')this.blur()">
     </div>
 
     <div class="add-row">
@@ -1518,20 +1588,19 @@ function save(data) {
 }
 function loadNotes() { return JSON.parse(localStorage.getItem('_cal_notes_') || '{}'); }
 let _calNoteTimer = null;
+// Chỉ lưu khi rời khỏi ô (blur) — không lưu mỗi lần gõ để tránh giật/lag
 function saveCalNote() {
-  // Lưu ngay vào localStorage để không mất khi chuyển ngày
   const k = key(selY, selM, selD);
   const notes = loadNotes();
   const val = document.getElementById('calNoteInput').value.trim();
+  const before = notes[k];
+  if (before === val || (!before && !val)) return; // không đổi gì thì bỏ qua
+  pushUndoNotes([k]);
   if (val) notes[k] = val; else delete notes[k];
   localStorage.setItem('_cal_notes_', JSON.stringify(notes));
-  // Debounce renderCal + cloud push — chỉ chạy sau khi ngừng gõ 500ms
-  clearTimeout(_calNoteTimer);
-  _calNoteTimer = setTimeout(() => {
-    scheduleFileSave();
-    scheduleCloudPush();
-    renderCal();
-  }, 500);
+  scheduleFileSave();
+  scheduleCloudPush();
+  renderCal();
 }
 
 // ══════════════════════════════════════════
@@ -1882,11 +1951,25 @@ function pushUndoNotes(keysAffected) {
   if (undoStack.length > MAX_UNDO) undoStack.shift();
 }
 
+// Undo cho note viết trên ô Gantt (ganttMarks)
+function pushUndoGanttMark(mk) {
+  const marks = loadGanttMarks();
+  undoStack.push({ type: 'ganttMark', mk, prevVal: marks[mk] });
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
 function undoLast() {
   if (!undoStack.length) return;
   const entry = undoStack.pop();
 
-  if (entry.type === 'notes') {
+  if (entry.type === 'ganttMark') {
+    const marks = loadGanttMarks();
+    if (entry.prevVal !== undefined) marks[entry.mk] = entry.prevVal;
+    else delete marks[entry.mk];
+    saveGanttMarks(marks);
+    saveToFile();
+    renderGantt();
+  } else if (entry.type === 'notes') {
     // Khôi phục notes
     const notes = loadNotes();
     entry.keysAffected.forEach(k => {
@@ -2176,6 +2259,7 @@ function editGanttMark(y, m, d, proj) {
   const cur = marks[mk] || '';
   const val = prompt(`Ghi chú [${proj}] ngày ${d}/${m}/${y}:\n(để trống để xóa)`, cur);
   if (val === null) return;
+  pushUndoGanttMark(mk); // Ctrl+Z để hoàn tác
   if (val.trim()) marks[mk] = val.trim(); else delete marks[mk];
   saveGanttMarks(marks);
   saveToFile(); // ghi ngay vào file để cross-device sync
@@ -3036,7 +3120,22 @@ function esc(s) {
   });
 })();
 
+// ── DARK MODE ──
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('_dark_mode_', isDark ? '1' : '0');
+  document.getElementById('darkToggleBtn').textContent = isDark ? '☀️' : '🌙';
+}
+function applyInitialDarkMode() {
+  const saved = localStorage.getItem('_dark_mode_');
+  const isDark = saved !== null ? saved === '1' : window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+  if (isDark) document.body.classList.add('dark');
+  const btn = document.getElementById('darkToggleBtn');
+  if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+}
+
 (async function init() {
+  applyInitialDarkMode();
   autoExpandAll(selY, selM, selD); // mở rộng toàn bộ sub-tasks ngày đang chọn khi khởi động
 
   // Trên Mac, phím tương đương Ctrl là Cmd — đổi nhãn tooltip cho đúng (chức năng vẫn nhận cả 2 phím)
@@ -3055,6 +3154,12 @@ function esc(s) {
     if (arrow) snToggleFold(arrow.closest('.sn-toggle'));
   });
   document.getElementById('scheduleNoteEditor').addEventListener('keydown', snToggleEnterContinue);
+  // Dán text từ nơi khác vào → luôn bỏ font/định dạng gốc, ép về font mặc định (Montserrat) của app
+  document.getElementById('scheduleNoteEditor').addEventListener('paste', e => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, text);
+  });
   window.addEventListener('resize', syncNotesPanelHeight);
 
   // Tự động pull dữ liệu mới nhất từ cloud (không cần click gì)
