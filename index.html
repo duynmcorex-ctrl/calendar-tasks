@@ -2697,18 +2697,14 @@ function renderTodos() {
     div.className = 'todo-item' + (t.done ? ' done' : '') + (!isWork ? ' board-personal' : '');
     div.dataset.id = t.id;
     div.dataset.idx = idx;
-    div.draggable = true;
-    // Tắt draggable NGAY khi mousedown bắt đầu trên chữ .txt — phải làm trước khi browser bắt đầu
-    // nhận diện cử chỉ kéo, vì preventDefault trong dragstart là quá muộn để cho phép bôi đen chữ.
-    div.addEventListener('mousedown', e => { div.draggable = !e.target.closest('.txt'); });
-    div.addEventListener('mouseup',   () => { div.draggable = true; });
-
     const hasSubs = t.subtasks && t.subtasks.length > 0;
     const isExpanded = expandedTasks.has(t.id);
     const showExp = hasSubs || isExpanded;
 
+    // Chỉ tay cầm ⠿ mới draggable — để chữ .txt luôn bôi đen được bằng chuột, không xung đột với kéo-thả
     const handle = document.createElement('span');
     handle.className = 'drag-handle'; handle.textContent = '⠿';
+    handle.draggable = true;
 
     const expBtn = document.createElement('button');
     expBtn.className = 'expand-btn' + (showExp ? '' : ' hidden');
@@ -2754,17 +2750,15 @@ function renderTodos() {
     div.appendChild(cb); div.appendChild(txt);
     div.appendChild(editBtn); div.appendChild(addSubBtn); div.appendChild(switchBtn); div.appendChild(delBtn);
 
-    // Main task drag events
-    div.addEventListener('dragstart', e => {
-      // Không kéo nếu bắt đầu từ nút/checkbox, hoặc đang bôi đen chữ trong .txt (để chọn 1 đoạn) — dùng tay cầm ⠿ để kéo
-      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.classList.contains('txt')) { e.preventDefault(); return; }
+    // Main task drag events — chỉ khởi động từ tay cầm ⠿ (không xung đột với bôi đen chữ)
+    handle.addEventListener('dragstart', e => {
       dragSrc = { type: 'main', id: t.id, idx };
       div.classList.add('dragging');
       el.classList.add('drag-active');
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', String(t.id));
     });
-    div.addEventListener('dragend', () => {
+    handle.addEventListener('dragend', () => {
       div.classList.remove('dragging');
       el.classList.remove('drag-active');
       dragSrc = null;
@@ -2802,13 +2796,11 @@ function renderTodos() {
         const sd = document.createElement('div');
         sd.className = 'sub-item' + (sub.done ? ' done' : '');
         sd.dataset.sid = sub.id;
-        sd.draggable = true;
-        // Tắt draggable NGAY khi mousedown bắt đầu trên chữ .txt — để cho phép bôi đen 1 đoạn chữ
-        sd.addEventListener('mousedown', e => { sd.draggable = !e.target.closest('.txt'); });
-        sd.addEventListener('mouseup',   () => { sd.draggable = true; });
 
+        // Chỉ tay cầm ⠿ mới draggable — để chữ .txt luôn bôi đen được bằng chuột
         const sdHandle = document.createElement('span');
         sdHandle.className = 'sub-drag-handle'; sdHandle.textContent = '⠿';
+        sdHandle.draggable = true;
 
         const sn = document.createElement('span'); sn.className = 'sub-num';
         sn.textContent = (boardIdx + 1) + '.' + (si + 1);
@@ -2824,10 +2816,8 @@ function renderTodos() {
         sd.appendChild(sdHandle); sd.appendChild(sn); sd.appendChild(sc);
         sd.appendChild(st); sd.appendChild(se); sd.appendChild(sd2);
 
-        // Sub-task drag events
-        sd.addEventListener('dragstart', e => {
-          // Không kéo nếu bắt đầu từ nút/checkbox, hoặc đang bôi đen chữ trong .txt — dùng tay cầm ⠿ để kéo
-          if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.classList.contains('txt')) { e.preventDefault(); return; }
+        // Sub-task drag events — chỉ khởi động từ tay cầm ⠿ (không xung đột với bôi đen chữ)
+        sdHandle.addEventListener('dragstart', e => {
           dragSrc = { type: 'sub', parentId: t.id, subId: sub.id, subIdx: si };
           sd.classList.add('dragging');
           el.classList.add('drag-active');
@@ -2841,7 +2831,7 @@ function renderTodos() {
           requestAnimationFrame(() => { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); });
           e.stopPropagation();
         });
-        sd.addEventListener('dragend', () => {
+        sdHandle.addEventListener('dragend', () => {
           sd.classList.remove('dragging');
           el.classList.remove('drag-active');
           dragSrc = null;
@@ -3218,10 +3208,6 @@ function applyInitialDarkMode() {
     document.execCommand('insertText', false, text);
   });
   window.addEventListener('resize', syncNotesPanelHeight);
-  // Phòng trường hợp thả chuột ra ngoài dòng (vd bôi đen chữ tràn qua dòng khác) — luôn trả lại draggable cho mọi dòng
-  document.addEventListener('mouseup', () => {
-    document.querySelectorAll('.todo-item, .sub-item').forEach(el => { el.draggable = true; });
-  });
 
   // Tự động pull dữ liệu mới nhất từ cloud (không cần click gì)
   const cloudLoaded = await cloudPull();
