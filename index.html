@@ -436,16 +436,19 @@ input[type=checkbox]:checked::after {
 
 /* Drag handle */
 .drag-handle {
-  color: #D1D1D6;
+  display: inline-flex;
+  align-items: center;
+  color: #E2E2E5;
   cursor: grab;
-  font-size: 1rem;
-  padding: 0 2px;
+  padding: 0 3px;
   flex-shrink: 0;
-  line-height: 1;
   user-select: none;
+  transition: color .12s;
 }
+.drag-handle svg { display: block; fill: currentColor; }
 .drag-handle:active { cursor: grabbing; }
-.todo-item:hover .drag-handle { color: #8E8E93; }
+.todo-item:hover .drag-handle { color: #C7C7CC; }
+.drag-handle:hover { color: #AEAEB2 !important; }
 
 /* Expand chevron */
 .expand-btn {
@@ -582,14 +585,18 @@ input[type=checkbox]:checked::after {
   letter-spacing: -.2px;
 }
 .sub-drag-handle {
-  color: #D1D1D6;
+  display: inline-flex;
+  align-items: center;
+  color: #E2E2E5;
   cursor: grab;
-  font-size: .82rem;
   flex-shrink: 0;
   user-select: none;
-  padding: 0 2px;
+  padding: 0 3px;
+  transition: color .12s;
 }
-.sub-item:hover .sub-drag-handle { color: #8E8E93; }
+.sub-drag-handle svg { display: block; fill: currentColor; }
+.sub-item:hover .sub-drag-handle { color: #C7C7CC; }
+.sub-drag-handle:hover { color: #AEAEB2 !important; }
 .sub-item .txt {
   font-size: .85rem;
   flex: 1;
@@ -1225,6 +1232,12 @@ body.dark .gantt-resize-handle::after { background: rgba(255,255,255,.15); }
 </div>
 
 <script>
+// Tay cầm kéo-thả — 6 chấm tròn tối giản, nhạt màu (thay cho ký tự ⠿ thô)
+const DRAG_GRIP_SVG = '<svg viewBox="0 0 10 16" width="6" height="10">' +
+  '<circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/>' +
+  '<circle cx="2" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/>' +
+  '<circle cx="2" cy="14" r="1.3"/><circle cx="8" cy="14" r="1.3"/></svg>';
+
 // ══════════════════════════════════════════
 //  LUNAR CALENDAR (accurate algorithm)
 // ══════════════════════════════════════════
@@ -2703,7 +2716,7 @@ function renderTodos() {
 
     // Chỉ tay cầm ⠿ mới draggable — để chữ .txt luôn bôi đen được bằng chuột, không xung đột với kéo-thả
     const handle = document.createElement('span');
-    handle.className = 'drag-handle'; handle.textContent = '⠿';
+    handle.className = 'drag-handle'; handle.innerHTML = DRAG_GRIP_SVG;
     handle.draggable = true;
 
     const expBtn = document.createElement('button');
@@ -2799,7 +2812,7 @@ function renderTodos() {
 
         // Chỉ tay cầm ⠿ mới draggable — để chữ .txt luôn bôi đen được bằng chuột
         const sdHandle = document.createElement('span');
-        sdHandle.className = 'sub-drag-handle'; sdHandle.textContent = '⠿';
+        sdHandle.className = 'sub-drag-handle'; sdHandle.innerHTML = DRAG_GRIP_SVG;
         sdHandle.draggable = true;
 
         const sn = document.createElement('span'); sn.className = 'sub-num';
