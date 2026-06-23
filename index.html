@@ -2698,6 +2698,10 @@ function renderTodos() {
     div.dataset.id = t.id;
     div.dataset.idx = idx;
     div.draggable = true;
+    // Tắt draggable NGAY khi mousedown bắt đầu trên chữ .txt — phải làm trước khi browser bắt đầu
+    // nhận diện cử chỉ kéo, vì preventDefault trong dragstart là quá muộn để cho phép bôi đen chữ.
+    div.addEventListener('mousedown', e => { div.draggable = !e.target.closest('.txt'); });
+    div.addEventListener('mouseup',   () => { div.draggable = true; });
 
     const hasSubs = t.subtasks && t.subtasks.length > 0;
     const isExpanded = expandedTasks.has(t.id);
@@ -2799,6 +2803,9 @@ function renderTodos() {
         sd.className = 'sub-item' + (sub.done ? ' done' : '');
         sd.dataset.sid = sub.id;
         sd.draggable = true;
+        // Tắt draggable NGAY khi mousedown bắt đầu trên chữ .txt — để cho phép bôi đen 1 đoạn chữ
+        sd.addEventListener('mousedown', e => { sd.draggable = !e.target.closest('.txt'); });
+        sd.addEventListener('mouseup',   () => { sd.draggable = true; });
 
         const sdHandle = document.createElement('span');
         sdHandle.className = 'sub-drag-handle'; sdHandle.textContent = '⠿';
@@ -3211,6 +3218,10 @@ function applyInitialDarkMode() {
     document.execCommand('insertText', false, text);
   });
   window.addEventListener('resize', syncNotesPanelHeight);
+  // Phòng trường hợp thả chuột ra ngoài dòng (vd bôi đen chữ tràn qua dòng khác) — luôn trả lại draggable cho mọi dòng
+  document.addEventListener('mouseup', () => {
+    document.querySelectorAll('.todo-item, .sub-item').forEach(el => { el.draggable = true; });
+  });
 
   // Tự động pull dữ liệu mới nhất từ cloud (không cần click gì)
   const cloudLoaded = await cloudPull();
