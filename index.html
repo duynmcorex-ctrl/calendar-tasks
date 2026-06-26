@@ -893,14 +893,35 @@ input[type=checkbox]:checked::after {
   flex-shrink: 0;
   transition: transform .1s;
 }
-.sn-toggle-label { font-size: 12.5px; font-weight: 600; outline: none; }
+.sn-toggle-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  outline: none;
+  flex: 1;
+  caret-color: #1c1c1e;
+}
 .sn-toggle-body {
   font-size: 12.5px;
+  line-height: 1.5;
   margin-left: 13px;
   padding-left: 8px;
   border-left: 1.5px solid rgba(60,60,67,.12);
+  caret-color: #1c1c1e;
 }
 .sn-toggle.collapsed .sn-toggle-body { display: none; }
+.sn-toggle-del {
+  cursor: pointer;
+  user-select: none;
+  font-size: 10px;
+  color: #c7c7cc;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity .12s, color .12s;
+  padding: 0 2px;
+}
+.sn-toggle-head:hover .sn-toggle-del { opacity: 1; }
+.sn-toggle-del:hover { color: #FF3B30; }
 .gantt-footer {
   font-size: 10px;
   color: #aeaeb2;
@@ -2257,6 +2278,7 @@ function snInsertToggle() {
     '<div class="sn-toggle-head">' +
       '<span class="sn-toggle-arrow">▾</span>' +
       '<span class="sn-toggle-label" contenteditable="true">Toggle</span>' +
+      '<span class="sn-toggle-del" title="Xoá toggle này">✕</span>' +
     '</div>' +
     '<div class="sn-toggle-body"></div>';
   const body = wrapper.querySelector('.sn-toggle-body');
@@ -2277,6 +2299,16 @@ function snToggleFold(wrapper) {
   saveScheduleNote();
 }
 
+// Xoá nguyên khối Toggle qua nút ✕ — chủ động xoá bằng JS (không dùng Backspace/Delete native)
+// để tránh lỗi trình duyệt gộp/xoá nhầm nội dung của các khối Toggle lân cận trong contenteditable.
+function snDeleteToggle(wrapper) {
+  const body = wrapper.querySelector('.sn-toggle-body');
+  const hasContent = body && body.textContent.trim().length > 0;
+  if (hasContent && !confirm('Xoá toggle này cùng toàn bộ nội dung bên trong?')) return;
+  wrapper.remove();
+  saveScheduleNote();
+}
+
 // Enter ngay trên dòng tiêu đề Toggle → tự tạo Toggle kế tiếp (giống outline Notion), không cần bấm lại nút
 function snToggleEnterContinue(e) {
   if (e.key !== 'Enter' || e.shiftKey) return;
@@ -2293,6 +2325,7 @@ function snToggleEnterContinue(e) {
     '<div class="sn-toggle-head">' +
       '<span class="sn-toggle-arrow">▾</span>' +
       '<span class="sn-toggle-label" contenteditable="true">Toggle</span>' +
+      '<span class="sn-toggle-del" title="Xoá toggle này">✕</span>' +
     '</div>' +
     '<div class="sn-toggle-body"><div><br></div></div>';
   wrapper.parentNode.insertBefore(newWrapper, wrapper.nextSibling);
@@ -2437,7 +2470,7 @@ function renderGantt() {
     const color = colorMap[proj] || GANTT_PALETTE[0];
     const dCount = dayCountMap[proj] || 0;
     const rowSel = proj === ganttSelectedRow;
-    html += `<tr class="${rowSel ? 'g-row-sel' : ''}"><td class="g-num">${sortedIdx+1}</td><td class="g-proj" title="Bấm để gióng ngang" onclick="selectGanttRow(event,'${proj}')" style="cursor:pointer">${proj}</td><td class="g-days">${dCount}d</td>`;
+    html += `<tr class="${rowSel ? 'g-row-sel' : ''}"><td class="g-num">${sortedIdx+1}</td><td class="g-proj" title="Bấm để gióng ngang — bấm 2 lần để đổi tên" onclick="selectGanttRow(event,'${proj}')" ondblclick="renameGanttProject(event,'${proj}')" style="cursor:pointer">${proj}</td><td class="g-days">${dCount}d</td>`;
     for (let d = 1; d <= daysInMonth; d++) {
       const active   = (dayMap[d] || []).includes(proj);
       const isSel    = isSameMonth && d === selD;
@@ -2511,7 +2544,7 @@ function syncNotesPanelHeight() {
 let ganttDrag        = null; // {y,m,d,proj,copy}
 let ganttRangeStart  = null; // {y,m,d,proj} — điểm neo Shift+click
 let ganttFocusedCell = null; // {proj,d} — cell đang focus để Delete key hoạt động sau re-render
-let ganttSortMode    = 'original'; // 'original' | 'asc' | 'desc'
+let ganttSortMode    = 'asc'; // mặc định tăng dần theo số ngày — 'asc' | 'desc' | 'original'
 let ganttSelectedRow = null; // mã dự án đang được gióng ngang (bấm vào tên dự án để chọn/bỏ chọn)
 
 function setGanttSort(mode) {
@@ -2522,6 +2555,46 @@ function setGanttSort(mode) {
 function selectGanttRow(e, proj) {
   e.stopPropagation(); // tránh bị listener "click ra ngoài" ở document xử lý luôn trong cùng lượt click
   ganttSelectedRow = (ganttSelectedRow === proj) ? null : proj;
+  renderGantt();
+}
+
+// Thay mã dự án ở đầu tên task, giữ nguyên phần còn lại (vd "HAT (Hương)" → "HAT2 (Hương)")
+function renameTaskLeadingCode(text, newCode) {
+  const m = text.match(/^[^\s\-\(\[\/]*/);
+  const leadLen = m ? m[0].length : 0;
+  return newCode + text.slice(leadLen);
+}
+
+// Đổi tên mã dự án từ Schedule → áp dụng ngay cho TẤT CẢ task liên quan trong todo list (mọi ngày), 2 chiều
+function renameGanttProject(e, oldProj) {
+  e.stopPropagation();
+  const input = prompt(`Đổi tên mã dự án "${oldProj}" — áp dụng cho TẤT CẢ task liên quan trong todo list:`, oldProj);
+  if (input === null) return;
+  const trimmed = input.trim().toUpperCase();
+  if (!trimmed || trimmed === oldProj) return;
+  if (!/^[A-Z][A-Z0-9]{0,7}$/.test(trimmed)) {
+    alert('Mã dự án không hợp lệ — chỉ chữ/số, tối đa 8 ký tự, bắt đầu bằng chữ.');
+    return;
+  }
+
+  const data = load();
+  const affectedKeys = Object.keys(data).filter(k => (data[k] || []).some(t => taskToProjectCode(t.text) === oldProj));
+  if (!affectedKeys.length) return;
+
+  // Undo snapshot trước khi đổi hàng loạt
+  const snap = {};
+  affectedKeys.forEach(k => { snap[k] = JSON.parse(JSON.stringify(data[k])); });
+  undoStack.push({ type: 'multi-tasks', keysAffected: affectedKeys, snapshot: snap });
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+
+  affectedKeys.forEach(k => {
+    data[k].forEach(t => {
+      if (taskToProjectCode(t.text) === oldProj) t.text = renameTaskLeadingCode(t.text, trimmed);
+    });
+  });
+  if (ganttSelectedRow === oldProj) ganttSelectedRow = trimmed;
+  save(data);
+  renderTodos();
   renderGantt();
 }
 
@@ -3208,10 +3281,12 @@ function applyInitialDarkMode() {
   renderCal();
   renderNote();
   document.getElementById('scheduleNoteEditor').innerHTML = loadScheduleNote();
-  // Click mũi tên toggle để thu gọn/mở rộng — dùng delegation vì nội dung được load lại qua innerHTML
+  // Click mũi tên toggle để thu gọn/mở rộng, click ✕ để xoá cả khối — dùng delegation vì nội dung được load lại qua innerHTML
   document.getElementById('scheduleNoteEditor').addEventListener('click', e => {
     const arrow = e.target.closest('.sn-toggle-arrow');
-    if (arrow) snToggleFold(arrow.closest('.sn-toggle'));
+    if (arrow) { snToggleFold(arrow.closest('.sn-toggle')); return; }
+    const del = e.target.closest('.sn-toggle-del');
+    if (del) snDeleteToggle(del.closest('.sn-toggle'));
   });
   document.getElementById('scheduleNoteEditor').addEventListener('keydown', snToggleEnterContinue);
   // Dán text từ nơi khác vào → luôn bỏ font/định dạng gốc, ép về font mặc định (Montserrat) của app
