@@ -893,17 +893,22 @@ input[type=checkbox]:checked::after {
   flex-shrink: 0;
   transition: transform .1s;
 }
+/* !important để luôn đồng nhất cỡ chữ, kể cả khi có span cỡ chữ cũ/typing-style sót lại từ trước (đè cả inline style) */
+.sn-toggle-label, .sn-toggle-label * {
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+}
 .sn-toggle-label {
-  font-size: 12.5px;
   font-weight: 600;
-  line-height: 1.5;
   outline: none;
   flex: 1;
   caret-color: #1c1c1e;
 }
+.sn-toggle-body, .sn-toggle-body * {
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+}
 .sn-toggle-body {
-  font-size: 12.5px;
-  line-height: 1.5;
   margin-left: 13px;
   padding-left: 8px;
   border-left: 1.5px solid rgba(60,60,67,.12);
@@ -1092,6 +1097,11 @@ body.dark .todo-list { background: #2c2c2e; box-shadow: 0 1px 4px rgba(0,0,0,.3)
 body.dark .todo-item::after { background: rgba(255,255,255,.08); }
 body.dark .todo-item:hover { background: rgba(255,255,255,.04); }
 body.dark .todo-item .txt { color: #f2f2f7; }
+/* Tay cầm kéo-thả: màu sáng mặc định quá nổi trên nền tối → đổi thành xám mờ giống cảm giác nhạt trên nền sáng */
+body.dark .drag-handle, body.dark .sub-drag-handle { color: #4a4a4c; }
+body.dark .todo-item:hover .drag-handle,
+body.dark .sub-item:hover .sub-drag-handle { color: #6e6e73; }
+body.dark .drag-handle:hover, body.dark .sub-drag-handle:hover { color: #8e8e93 !important; }
 body.dark .todo-item .edit-input,
 body.dark .sub-item .edit-input { color: #f2f2f7; background: rgba(255,255,255,.08); }
 body.dark .sub-item:hover { background: rgba(255,255,255,.06); }
@@ -1124,8 +1134,9 @@ body.dark .sn-toolbar button:hover,
 body.dark .sn-toolbar select:hover,
 body.dark .sn-color-trigger:hover { background: rgba(255,255,255,.08); }
 body.dark .sn-swatches { background: #2c2c2e; }
-body.dark .sn-editor { color: #f2f2f7; }
+body.dark .sn-editor { color: #f2f2f7; caret-color: #f2f2f7; }
 body.dark .sn-toggle-body { border-left-color: rgba(255,255,255,.15); }
+body.dark .sn-toggle-label, body.dark .sn-toggle-body { caret-color: #f2f2f7; }
 body.dark .gantt-resize-handle::after { background: rgba(255,255,255,.15); }
 </style>
 </head>
@@ -2032,11 +2043,20 @@ function pushUndoGanttMark(mk) {
   if (undoStack.length > MAX_UNDO) undoStack.shift();
 }
 
+// Undo cho khung note rich-text cạnh Schedule (vd xoá Toggle qua nút ✕)
+function pushUndoScheduleNote() {
+  undoStack.push({ type: 'scheduleNote', html: document.getElementById('scheduleNoteEditor').innerHTML });
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
 function undoLast() {
   if (!undoStack.length) return;
   const entry = undoStack.pop();
 
-  if (entry.type === 'ganttMark') {
+  if (entry.type === 'scheduleNote') {
+    document.getElementById('scheduleNoteEditor').innerHTML = entry.html;
+    saveScheduleNote();
+  } else if (entry.type === 'ganttMark') {
     const marks = loadGanttMarks();
     if (entry.prevVal !== undefined) marks[entry.mk] = entry.prevVal;
     else delete marks[entry.mk];
@@ -2305,6 +2325,7 @@ function snDeleteToggle(wrapper) {
   const body = wrapper.querySelector('.sn-toggle-body');
   const hasContent = body && body.textContent.trim().length > 0;
   if (hasContent && !confirm('Xoá toggle này cùng toàn bộ nội dung bên trong?')) return;
+  pushUndoScheduleNote(); // để Ctrl+Z khôi phục lại được nếu xoá nhầm
   wrapper.remove();
   saveScheduleNote();
 }
@@ -2544,7 +2565,7 @@ function syncNotesPanelHeight() {
 let ganttDrag        = null; // {y,m,d,proj,copy}
 let ganttRangeStart  = null; // {y,m,d,proj} — điểm neo Shift+click
 let ganttFocusedCell = null; // {proj,d} — cell đang focus để Delete key hoạt động sau re-render
-let ganttSortMode    = 'asc'; // mặc định tăng dần theo số ngày — 'asc' | 'desc' | 'original'
+let ganttSortMode    = 'desc'; // mặc định giảm dần theo số ngày — 'desc' | 'original' | 'asc'
 let ganttSelectedRow = null; // mã dự án đang được gióng ngang (bấm vào tên dự án để chọn/bỏ chọn)
 
 function setGanttSort(mode) {
